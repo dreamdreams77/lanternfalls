@@ -16,7 +16,7 @@ with sync_playwright() as p:
       // air chain: pogo twice over two foes without landing
       G.enemies=[]; G.air=0; G.player.vy=0; step(1);
       const p2=G.player, gy=p2.y; p2.onGround=false; p2.y-=60; p2.vy=0; G._melee=false;
-      const hits=[]; for(let i=0;i<3;i++){ const en=LF.makeEnemy('beetle',0,0,G,'a'+i); en.hp=en.maxHp=99; G.enemies.push(en); }
+      const hits=[]; for(let i=0;i<3;i++){ const en=LF.makeEnemy('beetle',10,9,G,'a'+i); en.hp=en.maxHp=99; G.enemies.push(en); }
       for(let i=0;i<3;i++){ p2.atkDir='d'; G._melee=true; LF.hurtEnemy(G.enemies[i],1,1,G); G._melee=false; }
       out.air=G.air; out.airBest=G.save.ext.air;
       G.player.y=gy; G.player.vy=0; step(15); out.airReset=G.air;
