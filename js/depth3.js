@@ -8,7 +8,7 @@
   /* ---------- Ember Graze: dashing through a foe or shot feeds the Flare and pays embers ---------- */
   function graze(kind, x, y) {
     const s = ext(), pl = G.player;
-    s.graze++; G.addFlare(kind === 'foe' ? 9 : 6);
+    s.graze++; G.addFlare((kind === 'foe' ? 9 : 6) * (pl.hasCharm('needle') ? 2 : 1));
     G.floatText(x, y - 8, 'GRAZE', '#9af0d8'); G.ring(x, y, '#9af0d8', 16); G.burst(x, y, 6, '#9af0d8', 70, 0); G.hitstop(.03); G.sfx('glow');
     G.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-40, 40), vy: LF.rand(-110, -60), v: 1, life: 28, ghost: 1 });
     G.checkBounties();
@@ -37,9 +37,9 @@
     const pl = Gm.player; if (!Gm._melee || pl.atkDir !== 'd') return;
     const s = ext(); Gm.air++; s.air = Math.max(s.air, Gm.air);
     if (Gm.air < 2) return;
-    const n = Gm.air; Gm.addFlare(n * 2);
+    const n = Gm.air, sky = pl.hasCharm('skyfire') ? 2 : 1; Gm.addFlare(n * 2 * sky);
     Gm.floatText(pl.cx, pl.y - 10, 'AIR x' + n, n >= 5 ? '#ff9a3c' : '#7ad8ff', n >= 4);
-    if (n >= 3) for (let k = 0, m = Math.min(4, n - 2); k < m; k++) Gm.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-50, 50), vy: LF.rand(-130, -70), v: 1, life: 28, ghost: 1 });
+    if (n >= 3) for (let k = 0, m = Math.min(4, n - 2) * sky; k < m; k++) Gm.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-50, 50), vy: LF.rand(-130, -70), v: 1, life: 28, ghost: 1 });
     Gm.checkBounties();
   }
   const hurtO = LF.hurtEnemy;

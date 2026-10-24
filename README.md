@@ -60,6 +60,7 @@ Gamepads (standard mapping) work as well. Touch controls appear automatically on
 - **Shielded elites:** a fourth affix that blocks frontal strikes; hit from behind, above or below. **Night wisps** drift into Mossroot after dusk. Two new shop upgrades (Bright Core, Wick Tinder) tune the Flare, and Wick, Pip and Marrow explain the new systems.
 - **Bounties and Bestiary:** a pause-menu tab with 7 auto-claimed bounties (embers, charms, a charm slot, a heart) and a bestiary of every foe.
 - **Ember Graze:** dash through a foe or an incoming shot to feed the Flare gauge and earn an ember. **Air Chain:** keep pogoing off foes without landing for bonus Flare and embers. Two new bounties (Needle Thread, Sky Dancer) and new Stats rows track them.
+- **Frenzied elites** (a fifth affix) enrage at half health and charge much faster. Two new charms, **Needle Wick** (double Flare from grazes, brief safety after dashing) and **Skyfire** (richer Air Chains), are earned from bounties, which now number 14.
 - Optional **Trial of Embers** (5 waves) and **New Game+** (stronger foes, keep your gear) after the ending.
 - Four NPCs with distinct voices (Wick, Pip, Marrow, Vesper), and a working shop.
 
@@ -67,6 +68,7 @@ Gamepads (standard mapping) work as well. Touch controls appear automatically on
 - **Polish pass:** contact shadows baked into every room, dark outlines on the player and foes for readability, pixel-stepped slash arcs, impact rings, fish in the water and prompts drawn above the lighting.
 - **Visual upgrade:** bloom on bright light, per-region colour grading, weather and ambience (drifting leaves and night rain in Mossroot, twinkling crystal dust in Glimmer Deep, rising bubbles underwater, ash and wind streaks in the Spire), light shafts, drifting ground fog, foreground vines and stalactites with faster parallax, soft entity shadows, rising embers off the player, floating damage and chain text, a low-health warning vignette and a Flare shockwave ring.
 - **Graphics pass 4:** nearby light now re-lights the baked rock so stone texture glows warm around your lantern, water gets depth shading and animated caustics (also on the floor beneath it), heavy hits add a brief chromatic fringe (off with Reduce flashes), dashes leave streaks, and kills release rising soul wisps.
+- **Graphics pass 5:** heat shimmer in the Spire, water wobble in the Drowned Chapel and a rippling Flare shockwave (all off with Reduce flashes), anamorphic streaks through strong lights, and a warm pool of light on the ground under you.
 - Layered parallax backgrounds, animated foliage, crystals, candles, vents and fog, god rays underwater, dynamic lantern lighting with a darkness layer, and a day/night cycle in the first region.
 - Chiptune music with a distinct track per region and boss/ending themes, procedural sound effects, and layered ambience (wind, drips, water, fire), all synthesized with the Web Audio API.
 - Title screen with Continue / New Game, settings (music, effects and ambience volumes, mute, screen shake, reduced flashes, touch controls), pause menu with Charms, Map, Journal, Stats and Help tabs, contextual tutorial tips, and confirmation prompts for destructive actions.
@@ -99,6 +101,8 @@ icons/                PWA icons (tools/make_icons.py)
 js/polish.js          contact shadows, sprite outlines, slash arcs, impact rings, fish
 js/depth2.js          night wisps, NPC hints for new systems
 js/depth3.js          Ember Graze, Air Chain, soul wisps, new bounties and stats
+js/fx3.js             heat and water shimmer, light streaks, ground light pool
+js/depth4.js          Frenzied elites, Needle Wick and Skyfire charms, more bounties
 js/fx2.js             lamp-lit surfaces, water depth and caustics, chromatic fringe, dash streaks
 js/fx.js              bloom, grading, weather, shafts, fog, shadows, HUD extras
 js/ui.js, js/ui2.js   menus, dialog, shop, map, journal, ending
@@ -116,6 +120,7 @@ python3 -m http.server 8123 &
 pip install playwright && playwright install chromium
 python3 tests/smoke_test.py /tmp/shots       # loads all 20 rooms, checks doors, dialog, menus, shop, death, save/continue, ending
 python3 tests/boss_bot_test.py /tmp/shots    # a bot defeats all 4 bosses and clears the Trial
+python3 tests/depth4_test.py                 # frenzied enrage, new charms and bounties
 python3 tests/depth3_test.py                 # graze, air chain, hit-stop input buffering, Phoenix Ash reset
 ```
 
