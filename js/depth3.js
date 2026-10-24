@@ -23,8 +23,8 @@
     if (pl.dashT <= 0) { this.grazeSet = null; return; }
     const set = this.grazeSet || (this.grazeSet = new Set()), box = { x: pl.x - 5, y: pl.y - 4, w: pl.w + 10, h: pl.h + 8 };
     for (const e of this.enemies) {
-      if (e.dead || set.has(e) || (e.kind === 'boss' && !e.active)) continue;
-      if (LF.overlap(box, e.kind === 'boss' ? { x: e.x + 5, y: e.y + 4, w: e.w - 10, h: e.h - 6 } : e)) { set.add(e); graze('foe', e.x + e.w / 2, e.y + e.h / 2); }
+      if (e.dead || set.has(e) || (e.kind === 'boss' && !e.active) || this.clock - (e._gz || -9) < 3) continue;
+      if (LF.overlap(box, e.kind === 'boss' ? { x: e.x + 5, y: e.y + 4, w: e.w - 10, h: e.h - 6 } : e)) { set.add(e); e._gz = this.clock; graze('foe', e.x + e.w / 2, e.y + e.h / 2); }
     }
     for (const p of this.projectiles) {
       if (p.harmless || set.has(p)) continue;
@@ -37,9 +37,9 @@
     const pl = Gm.player; if (!Gm._melee || pl.atkDir !== 'd') return;
     const s = ext(); Gm.air++; s.air = Math.max(s.air, Gm.air);
     if (Gm.air < 2) return;
-    const n = Gm.air, sky = pl.hasCharm('skyfire') ? 2 : 1; Gm.addFlare(n * 2 * sky);
+    const n = Gm.air, sky = pl.hasCharm('skyfire') ? 2 : 1; Gm.addFlare(Math.min(n, 6) * 2 * sky);
     Gm.floatText(pl.cx, pl.y - 10, 'AIR x' + n, n >= 5 ? '#ff9a3c' : '#7ad8ff', n >= 4);
-    if (n >= 3) for (let k = 0, m = Math.min(4, n - 2) * sky; k < m; k++) Gm.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-50, 50), vy: LF.rand(-130, -70), v: 1, life: 28, ghost: 1 });
+    if (n >= 3 && n % 2 === 1 && n <= 9) for (let k = 0, m = 2 * sky; k < m; k++) Gm.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-50, 50), vy: LF.rand(-130, -70), v: 1, life: 28, ghost: 1 });
     Gm.checkBounties();
   }
   const hurtO = LF.hurtEnemy;

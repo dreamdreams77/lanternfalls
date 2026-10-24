@@ -202,7 +202,7 @@
     ['dbl', 'dash', 'glide'].forEach(k => { if (d.abil[k]) n++; });
     ['thorn', 'prism', 'tide', 'warden'].forEach(k => { if (d.flags['boss_' + k]) n++; });
     n += d.moths.length + Object.keys(d.flags).filter(k => k.indexOf('frag:') === 0).length + d.charms.length + (d.flags.trial_done ? 1 : 0) + Math.min(17, d.lore.length);
-    return Math.min(100, Math.round(n / (3 + 4 + 11 + 4 + 7 + 1 + 17) * 100));
+    return Math.min(100, Math.round(n / (3 + 4 + 11 + 4 + Object.keys(LF.CHARMS).length + 1 + 17) * 100));
   };
   LF.totalMoths = 11; LF.totalFrags = 4;
 })();

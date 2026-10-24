@@ -30,7 +30,7 @@
     if (stop || this.state !== 'play') return;
     const pl = this.player;
     for (const e of this.enemies) {
-      if (e.affix !== 'frenzied' || e.rage || e.dead || e.hp > e.maxHp / 2) continue;
+      if (e.affix !== 'frenzied' || e.rage || e.dead || e.hp > e.maxHp / 2 || !isFinite(e.d.spd)) continue;
       e.rage = 1; e.d = Object.assign({}, e.d, { spd: e.d.spd * 1.9 }); e.flash = .2;
       this.floatText(e.x + e.w / 2, e.y - 6, 'ENRAGED', '#ff7a3a', true); this.burst(e.x + e.w / 2, e.y + e.h / 2, 14, '#ff7a3a', 100, 1); this.ring(e.x + e.w / 2, e.y + e.h / 2, '#ff7a3a', 20); this.sfx('boss');
     }

@@ -2055,7 +2055,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
     ['dbl', 'dash', 'glide'].forEach(k => { if (d.abil[k]) n++; });
     ['thorn', 'prism', 'tide', 'warden'].forEach(k => { if (d.flags['boss_' + k]) n++; });
     n += d.moths.length + Object.keys(d.flags).filter(k => k.indexOf('frag:') === 0).length + d.charms.length + (d.flags.trial_done ? 1 : 0) + Math.min(17, d.lore.length);
-    return Math.min(100, Math.round(n / (3 + 4 + 11 + 4 + 7 + 1 + 17) * 100));
+    return Math.min(100, Math.round(n / (3 + 4 + 11 + 4 + Object.keys(LF.CHARMS).length + 1 + 17) * 100));
   };
   LF.totalMoths = 11; LF.totalFrags = 4;
 })();
@@ -3828,8 +3828,8 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
     if (pl.dashT <= 0) { this.grazeSet = null; return; }
     const set = this.grazeSet || (this.grazeSet = new Set()), box = { x: pl.x - 5, y: pl.y - 4, w: pl.w + 10, h: pl.h + 8 };
     for (const e of this.enemies) {
-      if (e.dead || set.has(e) || (e.kind === 'boss' && !e.active)) continue;
-      if (LF.overlap(box, e.kind === 'boss' ? { x: e.x + 5, y: e.y + 4, w: e.w - 10, h: e.h - 6 } : e)) { set.add(e); graze('foe', e.x + e.w / 2, e.y + e.h / 2); }
+      if (e.dead || set.has(e) || (e.kind === 'boss' && !e.active) || this.clock - (e._gz || -9) < 3) continue;
+      if (LF.overlap(box, e.kind === 'boss' ? { x: e.x + 5, y: e.y + 4, w: e.w - 10, h: e.h - 6 } : e)) { set.add(e); e._gz = this.clock; graze('foe', e.x + e.w / 2, e.y + e.h / 2); }
     }
     for (const p of this.projectiles) {
       if (p.harmless || set.has(p)) continue;
@@ -3842,9 +3842,9 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
     const pl = Gm.player; if (!Gm._melee || pl.atkDir !== 'd') return;
     const s = ext(); Gm.air++; s.air = Math.max(s.air, Gm.air);
     if (Gm.air < 2) return;
-    const n = Gm.air, sky = pl.hasCharm('skyfire') ? 2 : 1; Gm.addFlare(n * 2 * sky);
+    const n = Gm.air, sky = pl.hasCharm('skyfire') ? 2 : 1; Gm.addFlare(Math.min(n, 6) * 2 * sky);
     Gm.floatText(pl.cx, pl.y - 10, 'AIR x' + n, n >= 5 ? '#ff9a3c' : '#7ad8ff', n >= 4);
-    if (n >= 3) for (let k = 0, m = Math.min(4, n - 2) * sky; k < m; k++) Gm.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-50, 50), vy: LF.rand(-130, -70), v: 1, life: 28, ghost: 1 });
+    if (n >= 3 && n % 2 === 1 && n <= 9) for (let k = 0, m = 2 * sky; k < m; k++) Gm.drops.push({ x: pl.cx, y: pl.cy, w: 4, h: 4, vx: LF.rand(-50, 50), vy: LF.rand(-130, -70), v: 1, life: 28, ghost: 1 });
     Gm.checkBounties();
   }
   const hurtO = LF.hurtEnemy;
@@ -3917,7 +3917,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
     if (stop || this.state !== 'play') return;
     const pl = this.player;
     for (const e of this.enemies) {
-      if (e.affix !== 'frenzied' || e.rage || e.dead || e.hp > e.maxHp / 2) continue;
+      if (e.affix !== 'frenzied' || e.rage || e.dead || e.hp > e.maxHp / 2 || !isFinite(e.d.spd)) continue;
       e.rage = 1; e.d = Object.assign({}, e.d, { spd: e.d.spd * 1.9 }); e.flash = .2;
       this.floatText(e.x + e.w / 2, e.y - 6, 'ENRAGED', '#ff7a3a', true); this.burst(e.x + e.w / 2, e.y + e.h / 2, 14, '#ff7a3a', 100, 1); this.ring(e.x + e.w / 2, e.y + e.h / 2, '#ff7a3a', 20); this.sfx('boss');
     }
