@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install playwright && playwright install --with-deps chromium
+      - name: Generated files are up to date
+        run: |
+          python3 tools/stamp_sw.py
+          python3 tools/build_single.py
+          git diff --exit-code -- sw.js dist/lanternfall-single.html || (echo "Run tools/stamp_sw.py and tools/build_single.py and commit the result" && exit 1)
+      - name: Serve and run tests
+        run: |
+          python3 -m http.server 8123 &
+          sleep 1
+          mkdir -p /tmp/shots
+          for t in smoke boss_bot seasons pwa depth3 depth4 physics; do echo "== $t"; python3 tests/${t}_test.py /tmp/shots; done

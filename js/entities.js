@@ -9,11 +9,12 @@
     solid(ch) { return SOLID.indexOf(ch) >= 0; },
     move(b, dt, G, o) {
       o = o || {};
-      b.hitX = 0; b.hitHead = false;
+      b.hitX = 0; b.hitHead = false; let guard = 0; // a body buried in solid tiles (or outside the room) keeps widening its own scan range, so cap the work
       // --- X ---
       b.x += b.vx * dt;
       let tx0 = Math.floor(b.x / T), tx1 = Math.floor((b.x + b.w - .001) / T), ty0 = Math.floor(b.y / T), ty1 = Math.floor((b.y + b.h - .001) / T);
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+        if (++guard > 96) { b.vx = 0; return; }
         if (this.solid(G.tile(tx, ty))) {
           if (b.vx > 0 || (b.vx === 0 && b.x + b.w / 2 < tx * T + T / 2)) { b.x = tx * T - b.w; b.hitX = 1; } else { b.x = (tx + 1) * T; b.hitX = -1; }
           b.vx = 0; tx0 = Math.floor(b.x / T); tx1 = Math.floor((b.x + b.w - .001) / T);
@@ -24,7 +25,7 @@
       b.y += b.vy * dt; b.onGround = false;
       tx0 = Math.floor(b.x / T); tx1 = Math.floor((b.x + b.w - .001) / T); ty0 = Math.floor(b.y / T); ty1 = Math.floor((b.y + b.h - .001) / T);
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-        const ch = G.tile(tx, ty);
+        const ch = G.tile(tx, ty); if (++guard > 192) { b.vy = 0; return; }
         if (this.solid(ch)) {
           if (b.vy > 0 || (b.vy === 0 && prevBottom <= ty * T + 1)) { b.y = ty * T - b.h; b.onGround = true; } else { b.y = (ty + 1) * T; b.hitHead = true; }
           b.vy = 0; ty0 = Math.floor(b.y / T); ty1 = Math.floor((b.y + b.h - .001) / T);
