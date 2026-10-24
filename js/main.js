@@ -63,7 +63,11 @@
       acc += Math.min(0.1, (now - last) / 1000); last = now;
       LF.pollPad();
       let n = 0;
-      while (acc >= STEP && n < 5) { G.update(STEP); In.endFrame(); acc -= STEP; n++; }
+      while (acc >= STEP && n < 5) {
+        // keep presses made during hit-stop alive until the simulation actually runs again
+        const frozen = LF.state === 'play' && G.hitstopT > 0;
+        G.update(STEP); if (!frozen) In.endFrame(); acc -= STEP; n++;
+      }
       if (n === 5) acc = 0;
       LF.alpha = acc / STEP;
       if (LF.state === 'title' || !G.room) G.renderTitle(g, G.clock); else G.render(g);
