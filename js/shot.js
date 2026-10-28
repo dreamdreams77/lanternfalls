@@ -149,7 +149,7 @@
     const pl = this.player, s = this.save, max = this.maxAmmo();
     if (pl.onGround) this.hopUsed = false;
     this.shotCD = Math.max(0, this.shotCD - dt);
-    if (this.ammo < max) { this.ammoT += dt; if (this.ammoT >= REGEN) { this.ammoT = 0; this.ammo++; } } else { this.ammo = max; this.ammoT = 0; }
+    if (this.ammo < max) { this.ammoT += dt * (pl.hasCharm('kindle') ? 1.3 : 1); if (this.ammoT >= REGEN) { this.ammoT = 0; this.ammo++; } } else { this.ammo = max; this.ammoT = 0; }
     const can = s.abil.shot && !pl.dead && pl.hurtT <= 0 && pl.dashT <= 0;
     if (can && In.hit('shoot')) {
       if (this.ammo >= 1 && this.shotCD <= 0) { this.ammo--; this.shotCD = .13; fire(false); }
