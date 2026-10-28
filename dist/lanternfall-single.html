@@ -127,6 +127,8 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
 
 #touch.noshot [data-k=shoot]{display:none}
 /* mini games */
+.menu.agrid{display:grid;grid-template-columns:1fr 1fr;width:calc(var(--u)*40);max-width:100%}
+.menu.agrid .btn{font-size:calc(var(--u)*.85);padding:calc(var(--u)*.45) calc(var(--u)*.8)}
 #touch.mini .tbtn.small,#touch.mini [data-k=down],#touch.mini [data-k=map]{display:none}
 .mg-quit{position:absolute;top:calc(var(--u)*.5);left:calc(var(--u)*.5);z-index:25;pointer-events:auto}
 .medal{display:inline-block;width:.8em;height:.8em;border-radius:50%;margin-left:.15em;vertical-align:-.05em;border:2px solid #0b0a1a}
@@ -4434,7 +4436,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
 
 </script>
 <script>
-/* Lanternfall - Ember Arcade: four mini games (Moth Catcher, Ember Range, Flame Hop, Lantern Echo) with medals, best scores and ember rewards */
+/* Lanternfall - Ember Arcade: eight mini games (Moth Catcher, Ember Range, Flame Hop, Lantern Echo, Ember Stack, Moth Flight, Wick Breaker, Lantern Snake) with medals, best scores and ember rewards */
 (function () {
   'use strict';
   const LF = window.LF, G = LF.G, W = LF.W, H = LF.H, In = LF.input, UI = LF.UI, h = UI.h;
@@ -4682,9 +4684,193 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
         drawFx(g, st); drawPops(g, st);
         txt(g, st.phase === 'input' ? 'YOUR TURN  ' + st.i + ' / ' + st.seq.length : st.phase === 'show' ? 'WATCH...' : 'NICE!', W / 2, H - 8, st.phase === 'input' ? '#7dffb0' : '#c49bff', 'center');
       }
+    },
+
+    /* Ember Stack: a block slides back and forth; drop it on the tower. Overhang is sliced off; perfect drops keep the width and can grow it back. */
+    stack: {
+      name: 'Ember Stack', desc: 'Drop sliding lantern blocks into a tall tower.', how: 'JUMP / HIT / SHOT (or tap) to drop the block', medals: [15, 30, 50],
+      init: () => ({ score: 0, tower: [{ x: W / 2 - 40, w: 80 }], cur: { x: 0, w: 80, dir: 1 }, perfect: 0, cam: 0, chips: [], fx: [], pops: [] }),
+      update(st, dt, taps) {
+        const lvl = st.tower.length, c = st.cur, top = st.tower[st.tower.length - 1], BH = 8;
+        c.x += c.dir * (60 + Math.min(lvl, 40) * 4) * dt;
+        if (c.x < 0) { c.x = 0; c.dir = 1; } if (c.x + c.w > W) { c.x = W - c.w; c.dir = -1; }
+        const want = Math.max(0, lvl * BH - 96); st.cam += (want - st.cam) * Math.min(1, dt * 6);
+        for (let i = st.chips.length - 1; i >= 0; i--) { const p = st.chips[i]; p.vy += 500 * dt; p.y += p.vy * dt; if (p.y > H + 40) st.chips.splice(i, 1); }
+        stepFx(st, dt); stepPops(st, dt);
+        if (!(pressed('jump', 'attack', 'shoot', 'up') || taps.length)) return;
+        const y = H - 10 - lvl * BH, x0 = Math.max(c.x, top.x), x1 = Math.min(c.x + c.w, top.x + top.w);
+        if (x1 - x0 <= 0) { st.chips.push({ x: c.x, w: c.w, y, vy: 0, col: COLS[lvl % COLS.length] }); st.over = true; sfx('lose'); return; }
+        let nb;
+        if (Math.abs(c.x - top.x) < 3) {
+          st.perfect++; nb = { x: top.x, w: Math.min(80, top.w + (st.perfect >= 3 ? 4 : 0)) }; st.score += 3; tone(660 + Math.min(8, st.perfect) * 80, .14, .08, 'square');
+          popText(st, W / 2, y - 8 + st.cam, st.perfect >= 3 ? 'PERFECT x' + st.perfect : 'PERFECT', '#ffd27a'); pfx(st, nb.x + nb.w / 2, y + st.cam, '#ffd27a', 10, 60);
+        } else {
+          st.perfect = 0; nb = { x: x0, w: x1 - x0 }; st.score += 1; tone(440, .08, .06, 'square');
+          const cx = c.x < top.x ? c.x : x1, cw = c.w - nb.w; if (cw > 0) st.chips.push({ x: cx, w: cw, y, vy: -40, col: COLS[lvl % COLS.length] });
+        }
+        st.tower.push(nb); st.cur = { x: c.dir > 0 ? 0 : W - nb.w, w: nb.w, dir: c.dir };
+      },
+      render(g, st, t) {
+        sky(g, 'stack', ['#0b0a1a', '#1d1640', '#3a2a5c']);
+        const BH = 8, cam = Math.round(st.cam);
+        R(g, '#0c0818', 0, H - 10 + cam, W, 10);
+        st.tower.forEach((b, i) => { const y = H - 10 - (i + 1) * BH + cam, col = i ? COLS[i % COLS.length] : '#4a3a2c'; if (y > H || y < -BH) return; R(g, col, b.x, y, b.w, BH); R(g, '#fff2c9', b.x, y, b.w, 1); R(g, '#05030f', b.x, y + BH - 1, b.w, 1); });
+        for (const p of st.chips) R(g, p.col, p.x, p.y + cam, p.w, BH);
+        if (!st.over) {
+          const lvl = st.tower.length, y = H - 10 - (lvl + 1) * BH + cam, c = st.cur, col = COLS[lvl % COLS.length];
+          glowDot(g, c.x + c.w / 2, y + 4, c.w / 2 + 6, col, .2); R(g, col, c.x, y, c.w, BH); R(g, '#fff2c9', c.x, y, c.w, 1);
+        }
+        drawFx(g, st); drawPops(g, st);
+        txt(g, 'HEIGHT ' + (st.tower.length - 1), 8, 30, '#c49bff');
+      }
+    },
+
+    /* Moth Flight: flap through the gaps in thorny vines. */
+    flight: {
+      name: 'Moth Flight', desc: 'Flap a moth through the gaps in the thorn vines.', how: 'JUMP (or tap) to flap', medals: [6, 15, 25],
+      init: () => ({ score: 0, y: 80, vy: 0, vines: [], spawnT: .6, el: 0, fx: [], pops: [] }),
+      update(st, dt, taps) {
+        st.el += dt; const spd = Math.min(115, 72 + st.el * 1.1);
+        if (pressed('jump', 'up', 'attack', 'shoot') || taps.length) { st.vy = -165; tone(880, .05, .04, 'square'); pfx(st, 80, st.y + 3, '#c49bff', 3, 30); }
+        st.vy = Math.min(st.vy + 520 * dt, 260); st.y += st.vy * dt;
+        st.spawnT -= dt;
+        if (st.spawnT <= 0) { st.spawnT = 1.7; const gap = Math.max(46, 64 - st.el * .5); st.vines.push({ x: W + 8, gy: rnd(40, H - 30 - gap), gh: gap, passed: false }); }
+        for (let i = st.vines.length - 1; i >= 0; i--) {
+          const v = st.vines[i]; v.x -= spd * dt;
+          if (v.x < -20) { st.vines.splice(i, 1); continue; }
+          if (!v.passed && v.x + 14 < 76) { v.passed = true; st.score++; tone(1320, .08, .06, 'square'); popText(st, 80, st.y - 10, '+1', '#ffd27a'); }
+          if (76 + 8 > v.x && 76 - 4 < v.x + 14 && (st.y - 3 < v.gy || st.y + 3 > v.gy + v.gh)) st.over = true;
+        }
+        if (st.y < 18 || st.y > H - 12) st.over = true;
+        if (st.over) { sfx('hurt'); pfx(st, 80, st.y, '#c49bff', 16, 90); }
+        stepFx(st, dt); stepPops(st, dt);
+      },
+      render(g, st, t) {
+        sky(g, 'flight', ['#07051a', '#151036', '#2a1a40']);
+        R(g, '#0c0818', 0, H - 10, W, 10); R(g, '#1a1228', 0, 14, W, 4);
+        for (const v of st.vines) {
+          R(g, '#1f5a34', v.x, 18, 14, v.gy - 18); R(g, '#1f5a34', v.x, v.gy + v.gh, 14, H - 10 - v.gy - v.gh);
+          for (let y = 20; y < v.gy; y += 7) { R(g, '#2f8f4c', v.x - 2, y, 3, 2); R(g, '#2f8f4c', v.x + 13, y + 3, 3, 2); }
+          for (let y = v.gy + v.gh + 2; y < H - 10; y += 7) { R(g, '#2f8f4c', v.x - 2, y, 3, 2); R(g, '#2f8f4c', v.x + 13, y + 3, 3, 2); }
+          thorn(g, v.x - 1, v.gy - 6, 16, 6); thorn(g, v.x - 1, v.gy + v.gh, 16, 6);
+        }
+        if (!st.over) { glowDot(g, 80, st.y, 16, '#c49bff', .3); moth(g, 80, st.y, t * (st.vy < 0 ? 1.8 : .8), '#c49bff'); }
+        drawFx(g, st); drawPops(g, st);
+      }
+    },
+
+    /* Wick Breaker: bounce embers off your paddle to break crystal bricks. Bricks broken before the ember returns build a combo;
+       glowing kindle bricks split the ember into three. 90 seconds, 3 lives (a life is lost only when every ember is gone). */
+    breaker: {
+      name: 'Wick Breaker', desc: 'Bounce embers to shatter walls of crystal bricks.', how: 'LEFT / RIGHT (or tap) to move · JUMP to launch', medals: [300, 700, 1200],
+      init() { const st = { score: 0, time: 90, px: W / 2, lives: 3, level: 0, fx: [], pops: [] }; this.wall(st); return st; },
+      wall(st) {
+        st.level++; st.bricks = []; st.balls = [{ x: st.px, y: 158, vx: 0, vy: 0, combo: 0 }]; st.stuck = true;
+        for (let r = 0; r < 5; r++) for (let c = 0; c < 10; c++) if ((r + c + st.level) % 7 !== 0 || st.level === 1)
+          st.bricks.push({ x: 20 + c * 28, y: 36 + r * 10, hp: r < st.level - 1 || (r === 0 && st.level > 1) ? 2 : 1, row: r, kindle: (c * 3 + r * 5 + st.level) % 11 === 0 });
+      },
+      speed: st => 190 * (1 + (st.level - 1) * .08),
+      update(st, dt, taps) {
+        st.time -= dt; if (st.time <= 0) { st.time = 0; st.over = true; return; }
+        if (taps.length) st.tx = taps[taps.length - 1].x;
+        let ax = In.axis; if (!ax && st.tx != null) { if (Math.abs(st.tx - st.px) > 3) ax = Math.sign(st.tx - st.px); else st.tx = null; } if (In.axis) st.tx = null;
+        st.px = LF.clamp(st.px + ax * 240 * dt, 20, W - 20);
+        stepFx(st, dt); stepPops(st, dt);
+        const sp = this.speed(st);
+        if (st.stuck) {
+          const b = st.balls[0]; b.x = st.px; b.y = 158;
+          if (pressed('jump', 'attack', 'shoot', 'up') || taps.length) { st.stuck = false; const a = -Math.PI / 2 + rnd(-.4, .4); b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; tone(520, .08, .06, 'square'); }
+          return;
+        }
+        for (const b of st.balls) {
+          const px = b.x, py = b.y; b.x += b.vx * dt; b.y += b.vy * dt;
+          if (b.x < 3 || b.x > W - 3) { b.vx = -b.vx; b.x = LF.clamp(b.x, 3, W - 3); }
+          if (b.y < 20) { b.vy = Math.abs(b.vy); b.y = 20; }
+          if (b.vy > 0 && b.y > 160 && b.y < 167 && Math.abs(b.x - st.px) < 20) {
+            let k = (b.x - st.px) / 20; if (Math.abs(k) < .12) k = (k < 0 ? -1 : 1) * .12 + rnd(-.08, .08); // never dead-vertical
+            let a = -Math.PI / 2 + k * 1.05;
+            if (st.bricks.length <= 4) { // the ember seeks the last crystals, so a wall never stalls on one stray brick
+              const br = st.bricks.reduce((m, q) => Math.abs(q.x + 12 - b.x) < Math.abs(m.x + 12 - b.x) ? q : m), to = Math.atan2(br.y + 4 - b.y, br.x + 12 - b.x);
+              a = LF.lerp(a, to, .65); a = LF.clamp(a, -Math.PI + .35, -.35);
+            }
+            b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; b.y = 160; b.combo = 0; tone(330, .05, .05, 'square');
+          }
+          for (const br of st.bricks) {
+            if (br.dead || b.x < br.x - 2 || b.x > br.x + 26 || b.y < br.y - 2 || b.y > br.y + 10) continue;
+            if (px < br.x - 2 || px > br.x + 26) b.vx = -b.vx; else b.vy = -b.vy;
+            b.x = px; b.y = py; br.hp--;
+            if (br.hp <= 0) {
+              br.dead = true; b.combo++; const p = (10 + br.row * 2) * Math.min(5, b.combo); st.score += p;
+              pfx(st, br.x + 12, br.y + 4, br.kindle ? '#ffd27a' : COLS[br.row % COLS.length], 8, 70); tone(700 + Math.min(8, b.combo) * 70, .06, .05, 'square');
+              if (b.combo >= 3) popText(st, br.x + 12, br.y - 2, 'x' + Math.min(5, b.combo), '#ffd27a');
+              if (br.kindle && st.balls.length < 6) { [-.5, .5].forEach(d => { const a = Math.atan2(b.vy, b.vx) + d; st.balls.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, combo: b.combo }); }); sfx('glow'); popText(st, br.x + 12, br.y + 12, 'SPLIT!', '#ffb23a'); }
+            } else { st.score += 5; pfx(st, br.x + 12, br.y + 4, '#c8e8ff', 4, 40); tone(1200, .04, .04, 'square'); }
+            break;
+          }
+        }
+        st.bricks = st.bricks.filter(br => !br.dead);
+        st.balls = st.balls.filter(b => b.y <= H + 4);
+        if (!st.bricks.length) { st.score += 150; popText(st, W / 2, 100, 'WALL CLEAR +150', '#ffd27a'); sfx('charm'); this.wall(st); return; }
+        if (!st.balls.length) { st.lives--; sfx('hurt'); if (st.lives <= 0) { st.over = true; return; } st.balls = [{ x: st.px, y: 158, vx: 0, vy: 0, combo: 0 }]; st.stuck = true; }
+      },
+      render(g, st, t) {
+        sky(g, 'breaker', ['#0b0a1a', '#141030', '#22183e']);
+        for (const br of st.bricks) {
+          const col = br.hp > 1 ? '#c8e8ff' : br.kindle ? '#ffd27a' : COLS[br.row % COLS.length]; R(g, '#05030f', br.x - 1, br.y - 1, 26, 10); R(g, col, br.x, br.y, 24, 8); R(g, '#fff2c9', br.x, br.y, 24, 1);
+          if (br.hp > 1) R(g, '#7ad8ff', br.x + 2, br.y + 3, 20, 2);
+          if (br.kindle) { glowDot(g, br.x + 12, br.y + 4, 12, '#ffb860', .25 + .15 * Math.sin(t * 6)); R(g, '#ff8a3d', br.x + 10, br.y + 2, 4, 4); }
+        }
+        R(g, '#4a3a2c', st.px - 18, 164, 36, 4); R(g, '#ffb23a', st.px - 16, 163, 32, 2); glowDot(g, st.px, 164, 22, '#ffb860', .15);
+        for (const b of st.balls) { glowDot(g, b.x, b.y, 10, '#ffb860', .35); R(g, '#ff8a3d', b.x - 2, b.y - 2, 4, 4); R(g, '#fff2c9', b.x - 1, b.y - 1, 2, 2); }
+        drawFx(g, st); drawPops(g, st);
+        for (let i = 0; i < 3; i++) R(g, i < st.lives ? '#ff5a6e' : '#3a2a44', 8 + i * 8, 20, 6, 5);
+        txt(g, 'WALL ' + st.level, W - 8, 30, '#c49bff', 'right'); // bricks start at y 36, below this line
+        if (st.stuck) txt(g, 'LAUNCH!', st.px, 154, '#ffd27a', 'center');
+      }
+    },
+
+    /* Lantern Snake: a trail of flame that grows as it eats embers. Don't bite your own tail or the walls. */
+    snake: {
+      name: 'Lantern Snake', desc: 'Grow a trail of flame by eating embers. Mind your tail.', how: 'ARROWS to turn · or tap a side of the screen', medals: [100, 250, 450],
+      init: () => { const st = { score: 0, body: [{ x: 8, y: 7 }, { x: 7, y: 7 }, { x: 6, y: 7 }], dir: { x: 1, y: 0 }, next: null, stepT: 0, grow: 0, food: null, gold: null, eaten: 0, fx: [], pops: [] }; snakeFood(st); return st; },
+      update(st, dt, taps) {
+        const D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+        for (const k in D) if (In.hit(k)) st.next = { x: D[k][0], y: D[k][1] };
+        for (const p of taps) { const h = st.body[0], hx = SX + h.x * SC + 5, hy = SY + h.y * SC + 5, dx = p.x - hx, dy = p.y - hy; st.next = Math.abs(dx) > Math.abs(dy) ? { x: Math.sign(dx), y: 0 } : { x: 0, y: Math.sign(dy) }; }
+        if (st.next && !(st.next.x === -st.dir.x && st.next.y === -st.dir.y)) st.dir = st.next;
+        st.next = null;
+        if (st.gold) { st.gold.t -= dt; if (st.gold.t <= 0) st.gold = null; }
+        st.stepT -= dt; stepFx(st, dt); stepPops(st, dt);
+        if (st.stepT > 0) return;
+        st.stepT = Math.max(.065, .13 - st.eaten * .003);
+        const h = st.body[0], n = { x: h.x + st.dir.x, y: h.y + st.dir.y };
+        if (n.x < 0 || n.y < 0 || n.x >= GW || n.y >= GH || st.body.slice(0, -1).some(s => s.x === n.x && s.y === n.y)) { st.over = true; sfx('hurt'); pfx(st, SX + h.x * SC + 5, SY + h.y * SC + 5, '#ff8a3d', 18, 90); return; }
+        st.body.unshift(n);
+        const at = q => q && q.x === n.x && q.y === n.y, cx = SX + n.x * SC + 5, cy = SY + n.y * SC + 5;
+        if (at(st.food)) { st.eaten++; st.grow += 2; st.score += 10; tone(988 + (st.eaten % 6) * 70, .07, .05, 'square'); pfx(st, cx, cy, '#ffd27a', 6, 40); snakeFood(st); if (st.eaten % 5 === 0) snakeGold(st); }
+        else if (at(st.gold)) { st.score += 50; st.grow += 3; st.gold = null; tone(1568, .15, .07); popText(st, cx, cy - 6, '+50', '#ffd27a'); pfx(st, cx, cy, '#c49bff', 12, 60); }
+        if (st.grow > 0) st.grow--; else st.body.pop();
+      },
+      render(g, st, t) {
+        sky(g, 'snake', ['#0b0a1a', '#141030', '#1d1640']);
+        R(g, '#4a3a2c', SX - 2, SY - 2, GW * SC + 4, GH * SC + 4); R(g, '#0c0818', SX, SY, GW * SC, GH * SC);
+        for (let x = 0; x < GW; x++) for (let y = 0; y < GH; y++) if ((x + y) % 2 === 0) R(g, '#100b20', SX + x * SC, SY + y * SC, SC, SC);
+        const cell = (q, col, inset) => R(g, col, SX + q.x * SC + inset, SY + q.y * SC + inset, SC - inset * 2, SC - inset * 2);
+        if (st.food) { glowDot(g, SX + st.food.x * SC + 5, SY + st.food.y * SC + 5, 8, '#ffb860', .35); cell(st.food, '#ff8a3d', 2); cell(st.food, '#ffd27a', 3); }
+        if (st.gold && (st.gold.t > 1.5 || Math.sin(t * 20) > 0)) { glowDot(g, SX + st.gold.x * SC + 5, SY + st.gold.y * SC + 5, 10, '#c49bff', .4); moth(g, SX + st.gold.x * SC + 5, SY + st.gold.y * SC + 5, t, '#ffd27a'); }
+        st.body.forEach((q, i) => { const k = i / st.body.length; cell(q, i === 0 ? '#fff2c9' : k < .5 ? '#ffb23a' : '#ff8a3d', i === 0 ? 0 : 1); });
+        const h = st.body[0]; R(g, '#05030f', SX + h.x * SC + 3, SY + h.y * SC + 3, 1, 1); R(g, '#05030f', SX + h.x * SC + 6, SY + h.y * SC + 3, 1, 1);
+        drawFx(g, st); drawPops(g, st);
+      }
     }
   };
   const ECHO_POS = [[W / 2, 44], [W / 2 + 60, 94], [W / 2, 144], [W / 2 - 60, 94]], ECHO_COL = ['#ff8a3d', '#7ad8ff', '#7dffb0', '#c49bff'];
+  const COLS = ['#ff8a3d', '#ffb23a', '#ffd27a', '#c49bff', '#7ad8ff', '#7dffb0'];
+  // Lantern Snake board: 30 x 14 cells of 10 px under the score line
+  const SC = 10, GW = 30, GH = 14, SX = 10, SY = 26;
+  function snakeFree(st) { for (let k = 0; k < 500; k++) { const q = { x: LF.randi(0, GW - 1), y: LF.randi(0, GH - 1) }; if (!st.body.some(s => s.x === q.x && s.y === q.y) && !(st.food && st.food.x === q.x && st.food.y === q.y)) return q; } return { x: 0, y: 0 }; }
+  function snakeFood(st) { st.food = snakeFree(st); }
+  function snakeGold(st) { st.gold = Object.assign(snakeFree(st), { t: 5 }); }
 
   /* ============================== arcade controller ============================== */
   const A = LF.Arcade = {
@@ -4703,10 +4889,10 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
     },
     open(from) {
       this.from = from;
-      const s = h('div', 'screen dim'), p = h('div', 'panel'); p.style.minWidth = 'calc(var(--u)*26)';
+      const s = h('div', 'screen dim'), p = h('div', 'panel'); p.style.minWidth = 'calc(var(--u)*40)';
       p.append(h('h2', '', 'Ember Arcade'), h('div', 'hint', 'Medals: bronze, silver, gold. Play from the pause menu during a journey to win embers for new medals.'));
-      const m = h('div', 'menu'); m.style.margin = '.6em auto 0'; const items = this.list(m);
-      const bk = UI.btn('Back', () => { sfx('back'); UI.title(); }, 'sm'); m.append(bk); items.push(bk);
+      const m = h('div', 'menu agrid'); m.style.margin = '.6em auto 0'; const items = this.list(m);
+      const bk = UI.btn('Back', () => { sfx('back'); UI.title(); }, 'sm'); bk.style.gridColumn = '1 / -1'; m.append(bk); items.push(bk);
       p.append(m); s.append(p); UI.show(s); UI.setNav(items, a => { if (a === 'pause') { bk.click(); return true; } return false; });
     },
     play(id) {
@@ -4776,13 +4962,13 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
   UI.tab_arcade = function (body) {
     A.from = 'pause';
     body.append(h('h2', '', 'Ember Arcade'), h('div', 'hint', 'New medals pay embers: bronze 25, silver 50, gold 100.'));
-    const m = h('div', 'menu'); m.style.margin = '.5em auto 0'; m.style.maxWidth = 'calc(var(--u)*26)';
+    const m = h('div', 'menu agrid'); m.style.margin = '.5em auto 0';
     const items = A.list(m); body.append(m); return items;
   };
   const medalCount = (s, min) => Object.values((s.ext || {}).medals || {}).filter(v => v >= min).length;
   LF.BOUNTIES.push(
-    { id: 'arcade', name: 'Arcade Regular', desc: 'Earn a medal in all four Ember Arcade games.', test: s => [medalCount(s, 1), 4], reward: 'embers:120', rtxt: '120 embers' },
-    { id: 'arcadegold', name: 'Arcade Legend', desc: 'Earn a gold medal in all four Ember Arcade games.', test: s => [medalCount(s, 3), 4], reward: 'slot', rtxt: '+1 charm slot' }
+    { id: 'arcade', name: 'Arcade Regular', desc: 'Earn a medal in every Ember Arcade game.', test: s => [medalCount(s, 1), Object.keys(GAMES).length], reward: 'embers:120', rtxt: '120 embers' },
+    { id: 'arcadegold', name: 'Arcade Legend', desc: 'Earn a gold medal in every Ember Arcade game.', test: s => [medalCount(s, 3), Object.keys(GAMES).length], reward: 'slot', rtxt: '+1 charm slot' }
   );
 })();
 
