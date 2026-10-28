@@ -157,7 +157,7 @@
 
   UI.newGamePlus = function () {
     const o = G.save, n = LF.newSave();
-    n.ng = o.ng + 1; n.abil = { dbl: true, dash: true, glide: true }; n.charms = o.charms.slice(); n.eq = o.eq.slice(); n.slots = o.slots;
+    n.ng = o.ng + 1; n.abil = { dbl: true, dash: true, glide: true, shot: true }; n.charms = o.charms.slice(); n.eq = o.eq.slice(); n.slots = o.slots;
     n.dmgLvl = o.dmgLvl; n.lightLvl = o.lightLvl; n.flaskLvl = o.flaskLvl; n.maxHp = o.maxHp; n.hp = o.maxHp; n.lore = o.lore.slice(); n.flags = { started: 1 };
     Object.keys(o.seen).forEach(k => { if (k.indexOf('tip:') === 0) n.seen[k] = 1; });
     LF.Save.write(n); UI.clearScreen(); G.fade.a = 1; G.start(n); UI.banner('New Game+ ' + n.ng, 'The dark remembers');

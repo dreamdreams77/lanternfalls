@@ -111,6 +111,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
 .screen,#dialog,#confirm{pointer-events:auto}
 #tip{pointer-events:none}
 
+#touch.noshot [data-k=shoot]{display:none}
 /* mini games */
 #touch.mini .tbtn.small,#touch.mini [data-k=down],#touch.mini [data-k=map]{display:none}
 .mg-quit{position:absolute;top:calc(var(--u)*.5);left:calc(var(--u)*.5);z-index:25;pointer-events:auto}

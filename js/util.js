@@ -76,7 +76,7 @@
     const root = document.getElementById('touch');
     const active = new Map();
     root.querySelectorAll('.tbtn').forEach(b => {
-      const k = b.dataset.k;
+      const k = b.dataset.k; if (b.dataset.drag) return; // drag-to-aim buttons wire themselves (js/shot.js)
       const press = e => {
         e.preventDefault(); In.set(k, true, 'touch'); b.classList.add('on'); active.set(e.pointerId, b);
         try { b.setPointerCapture(e.pointerId); } catch (_) {}
@@ -88,7 +88,7 @@
       b.addEventListener('pointercancel', rel);
       b.addEventListener('lostpointercapture', rel);
     });
-    const show = () => { root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
+    const show = () => { root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.classList.toggle('noshot', !(LF.G && LF.G.save && LF.G.save.abil.shot)); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
     LF.refreshTouch = show;
     window.addEventListener('touchstart', () => {
       if (!LF.touchDetected) { LF.touchDetected = true; show(); } In.lastDevice = 'touch';

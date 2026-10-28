@@ -32,7 +32,7 @@ There is also a **single-file build**, `dist/lanternfall-single.html`, with ever
 | Move | A / D, arrow keys | on-screen arrows |
 | Jump (hold = higher) | Space, Z, K | JUMP |
 | Strike (hold Up/Down to aim) | X, J, Enter | HIT |
-| Ember Shot (hold Up/Down to aim, hold to charge a Lance) | G, B, O | SHOT |
+| Ember Shot (after the first boss; hold Up/Down to aim, hold to charge a Lance) | G, B, O | SHOT (drag to aim) |
 | Dash (once unlocked) | C, Shift, L | DASH |
 | Interact / talk / read | Up, W, E | ACT |
 | Kindle (heal with embers) | hold Down on the ground | hold the down button |
@@ -64,7 +64,7 @@ Gamepads (standard mapping) work as well; the B button fires Ember Shots. Touch 
 - **Bounties and Bestiary:** a pause-menu tab with 7 auto-claimed bounties (embers, charms, a charm slot, a heart) and a bestiary of every foe.
 - **Ember Graze:** dash through a foe or an incoming shot to feed the Flare gauge and earn an ember. **Air Chain:** keep pogoing off foes without landing for bonus Flare and embers. Two new bounties (Needle Thread, Sky Dancer) and new Stats rows track them.
 - **Frenzied elites** (a fifth affix) enrage at half health and charge much faster. Two new charms, **Needle Wick** (double Flare from grazes, brief safety after dashing) and **Skyfire** (richer Air Chains), are earned from bounties, which now number 14.
-- **Ember Shot:** a real ranged attack. Fire with G / B (touch: SHOT), aim 8 ways with Up/Down and the arrows, and shots lean toward foes in view (aim assist with line of sight). You carry 3 shots that refill on their own (HUD pips under the Flare gauge). Hold the button to charge a **Lance** (2 shots) that pierces foes, Shielded guards and enemy shots, cracks walls in one hit, and launches you upward when fired straight down mid-air (once per jump). Normal shots knock enemy shots out of the air; Shielded elites block them from the front.
+- **Ember Shot:** a real ranged attack, unlocked when you defeat the Thornmother (saves already past her get it on load). Fire with G / B (touch: SHOT), aim 8 ways with Up/Down and the arrows, and shots lean toward foes in view (aim assist with line of sight). On touch, **drag from the SHOT button** to aim in 8 directions (dots show the aim while you hold), or just tap it to fire at the nearest foe across a wide arc. Bosses take reduced damage from shots (half from normal shots, about 60% from Lances), so melee stays the main way to fight them. You carry 3 shots that refill on their own (HUD pips under the Flare gauge). Hold the button to charge a **Lance** (2 shots) that pierces foes, Shielded guards and enemy shots, cracks walls in one hit, and launches you upward when fired straight down mid-air (once per jump). Normal shots knock enemy shots out of the air; Shielded elites block them from the front.
 - **Shot depth:** two charms (**Spitfire** forks shots into three, sold by Pip; **Seeker Ember** makes shots curve toward foes, from a bounty), two shop upgrades (**Ember Quiver** for more shots, **Kindled Lance** for harder Lances) and three bounties (Sharpshooter, Lancer, Skeet Flame).
 - **Ember Arcade mini games**, from the title screen (**Mini Games**) or the pause menu (**Arcade** tab): **Moth Catcher** (catch falling moths, dodge thorn seeds), **Ember Range** (a shooting gallery with combos, reloads and an accuracy bonus; tap to shoot on touch), **Flame Hop** (an endless runner with double hops, thorns and bats) and **Lantern Echo** (repeat the lantern sequence). Each has bronze, silver and gold medals and a best score. Played from the pause menu during a journey, a new medal pays embers once (25 / 50 / 100), and two bounties reward medals in every game.
 - Optional **Trial of Embers** (5 waves) and **New Game+** (stronger foes, keep your gear) after the ending.
@@ -130,7 +130,7 @@ python3 tests/smoke_test.py /tmp/shots       # loads all 20 rooms, checks doors,
 python3 tests/boss_bot_test.py /tmp/shots    # a bot defeats all 4 bosses and clears the Trial
 python3 tests/depth4_test.py                 # frenzied enrage, new charms and bounties
 python3 tests/depth3_test.py                 # graze, air chain, hit-stop input buffering, Phoenix Ash reset
-python3 tests/arcade_test.py                 # Ember Shot and Lance, all four mini games, medal rewards, rotate screen mode
+python3 tests/arcade_test.py                 # Ember Shot unlock, Lance, boss damage, touch drag-aim, mini games, medal rewards, rotate mode
 ```
 
 Both tests report any console or page errors. You can also play it by hand and open the browser console; the game object is exposed as `window.LF`.

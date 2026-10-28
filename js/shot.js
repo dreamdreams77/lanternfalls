@@ -19,7 +19,10 @@
   LF.SHOP.splice(LF.SHOP.findIndex(i => i.type === 'slot'), 0, { id: 'spitfire', type: 'charm', cost: 190 });
   LF.SHOP.push({ id: 'quiver', type: 'up', key: 'quiver', name: 'Ember Quiver', icon: 'quiver', desc: 'Carry one more Ember Shot.', costs: [140, 280] },
     { id: 'lance', type: 'up', key: 'lance', name: 'Kindled Lance', icon: 'lance', desc: 'Charged Lances hit harder.', costs: [180, 340] });
-  LF.TIPS.shoot = ['G or B fires an Ember Shot (aim with UP / DOWN). Hold it to charge a piercing Lance.', 'Tap SHOT to fire (hold UP or DOWN to aim). Hold SHOT to charge a piercing Lance.'];
+  S.ICONS.shot = ['........', '..yy....', '.yYwy.y.', 'yYwwYyyy', '.yYwy.y.', '..yy....', '........', '........'];
+  LF.ABIL_INFO.shot = ['Ember Shot', 'Fire embers from afar. Hold to charge a Lance.', 'shot'];
+  LF.TIPS.shot = LF.TIPS.shoot = ['G or B fires an Ember Shot (aim with UP / DOWN). Hold it to charge a piercing Lance.', 'Tap SHOT to fire at the nearest foe. Drag from SHOT to aim. Hold it to charge a piercing Lance.'];
+  const BOSS_SHOT = .5, BOSS_LANCE = .6; // bosses shrug off part of a shot, so melee stays the main way to fight them
 
   /* ---------- sounds ---------- */
   const sfxO = LF.Audio.sfx;
@@ -40,13 +43,16 @@
   function aim(pl) {
     const ax = In.axis, u = In.isDown('up'), d = In.isDown('down') && !pl.onGround, f = ax || pl.face;
     let a = u ? (ax ? Math.atan2(-1, ax) : -Math.PI / 2) : d ? (ax ? Math.atan2(1, ax) : Math.PI / 2) : (f > 0 ? 0 : Math.PI);
+    if (LF.touchAim != null) a = LF.touchAim;
+    // a plain touch tap has no way to aim, so it looks for a foe across a much wider arc
+    const cone = LF.touchAim == null && In.lastDevice === 'touch' && !u && !d ? 1.25 : .38;
     let best = null, bs = 1e9;
     for (const e of G.enemies) {
       if (e.dead || (e.kind === 'boss' && !e.active)) continue;
       const ex = e.x + e.w / 2, ey = e.y + e.h / 2, dx = ex - pl.cx, dy = ey - pl.cy, dist = Math.hypot(dx, dy);
       if (dist > 210 || dist < 4) continue;
       let da = Math.abs(Math.atan2(dy, dx) - a); if (da > Math.PI) da = TAU - da;
-      if (da > .38) continue;
+      if (da > cone) continue;
       const sc = dist * (1 + da * 2);
       if (sc < bs && clear(pl.cx, pl.cy, ex, ey)) { bs = sc; best = Math.atan2(dy, dx); }
     }
@@ -106,7 +112,7 @@
           G.sfx('hit'); G.floatText(cx, e.y - 4, 'BLOCKED', '#b0c0ff'); G.ring(cx - dir * 6, cy, '#b0c0ff', 10); dead = true; break;
         }
         let killed;
-        if (e.kind === 'boss') { LF.Bosses.hurt(e, b.dmg, dir, G); killed = e.dead || e.hp <= 0; }
+        if (e.kind === 'boss') { LF.Bosses.hurt(e, b.lance ? Math.max(1, Math.round(b.dmg * BOSS_LANCE)) : b.dmg * BOSS_SHOT, dir, G); killed = e.dead || e.hp <= 0; }
         else { killed = LF.hurtEnemy(e, b.dmg, dir, G); if (!killed && !b.lance) e.vx *= .5; }
         if (b.lance && !killed && pl.hasCharm('frost')) e.chill = 2.4;
         const x = ext(); x.shotHits++; if (killed && b.lance) x.lanceKills++;
@@ -130,11 +136,10 @@
     simO.call(this, dt);
     if (stop || this.state !== 'play') return;
     const pl = this.player, s = this.save, max = this.maxAmmo();
-    if (s.flags.wick_met && !s.seen['tip:shoot']) this.tip('shoot');
     if (pl.onGround) this.hopUsed = false;
     this.shotCD = Math.max(0, this.shotCD - dt);
     if (this.ammo < max) { this.ammoT += dt; if (this.ammoT >= REGEN) { this.ammoT = 0; this.ammo++; } } else { this.ammo = max; this.ammoT = 0; }
-    const can = !pl.dead && pl.hurtT <= 0 && pl.dashT <= 0;
+    const can = s.abil.shot && !pl.dead && pl.hurtT <= 0 && pl.dashT <= 0;
     if (can && In.hit('shoot')) {
       if (this.ammo >= 1 && this.shotCD <= 0) { this.ammo--; this.shotCD = .13; fire(false); }
       else { this.sfx('back'); this.floatText(pl.cx, pl.y - 8, 'NO SHOTS', '#8a7aa8'); }
@@ -149,10 +154,44 @@
         this.chargeT = 0; this.chReady = false;
       }
     }
+    if (!In.isDown('shoot') && !this.chargeT) LF.touchAim = null;
     updateShots(dt);
   };
   const resetShots = function () { this.shots = []; this.chargeT = 0; this.chReady = false; this.ammo = this.save ? this.maxAmmo() : 3; this.ammoT = 0; };
   const loadO = G.loadRoom; G.loadRoom = function () { const r = loadO.apply(this, arguments); resetShots.call(this); return r; };
+
+  /* ---------- unlock: the Thornmother's fall kindles the Ember Shot ---------- */
+  const startO = G.start;
+  G.start = function (s) { if (s.flags.boss_thorn) s.abil.shot = true; return startO.apply(this, arguments); }; // saves already past her
+  const killO = G.killBoss;
+  G.killBoss = function (b) {
+    killO.apply(this, arguments);
+    if (b.id === 'thorn' && !this.save.abil.shot) setTimeout(() => { if (!this.save.abil.shot) { this.give('abil:shot'); LF.refreshTouch && LF.refreshTouch(); } }, 3400);
+  };
+
+  /* ---------- touch: drag from the SHOT button to aim; a tap fires at the nearest foe ---------- */
+  const sb = document.querySelector('#touch [data-k=shoot]');
+  if (sb) {
+    let tp = null;
+    const press = () => { if (tp && !tp.pressed) { tp.pressed = true; In.set('shoot', true, 'touch'); } };
+    const end = e => {
+      if (!tp || e.pointerId !== tp.id) return;
+      clearTimeout(tp.timer); press(); In.set('shoot', false); sb.classList.remove('on'); tp = null;
+    };
+    sb.addEventListener('pointerdown', e => {
+      e.preventDefault(); if (tp) return;
+      try { sb.setPointerCapture(e.pointerId); } catch (_) {}
+      tp = { id: e.pointerId, p0: LF.toGame(e.clientX, e.clientY), pressed: false }; LF.touchAim = null; sb.classList.add('on'); In.lastDevice = 'touch';
+      tp.timer = setTimeout(press, 140); // held still: fire at once and start charging
+    });
+    sb.addEventListener('pointermove', e => {
+      if (!tp || e.pointerId !== tp.id) return;
+      const p = LF.toGame(e.clientX, e.clientY), dx = p.x - tp.p0.x, dy = p.y - tp.p0.y;
+      if (Math.hypot(dx, dy) < 5) return;
+      LF.touchAim = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4); press();
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => sb.addEventListener(n, end));
+  }
 
   /* ---------- drawing: streaking shots, charge glow, ammo pips ---------- */
   const dpO = S.drawPlayer;
@@ -162,6 +201,7 @@
       const k = Math.min(1, G.chargeT / CHARGE), x = pl.cx - cam.x, y = pl.cy - cam.y, on = G.chReady && Math.sin(t * 30) > 0;
       g.globalAlpha = .5 + .5 * k; R(g, on ? '#fff2c9' : '#ff9a3c', x + pl.face * 6 - 1, y - 2, 3, 3); g.globalAlpha = 1;
     }
+    if (LF.touchAim != null && G.chargeT > 0 && !pl.dead) for (let i = 1; i <= 3; i++) R(g, i === 3 ? '#fff2c9' : '#ffb23a', pl.cx - cam.x + Math.cos(LF.touchAim) * (6 + i * 6) - 1, pl.cy - cam.y + Math.sin(LF.touchAim) * (6 + i * 6) - 1, 2, 2);
     g.save(); g.globalCompositeOperation = 'lighter';
     for (const b of G.shots) {
       const n = b.tr.length / 2;
@@ -182,7 +222,7 @@
   const hudO = G.drawHUD;
   G.drawHUD = function (g) {
     hudO.call(this, g);
-    if (!this.save || this.state === 'dead') return;
+    if (!this.save || this.state === 'dead' || !this.save.abil.shot) return;
     const max = this.maxAmmo();
     for (let i = 0; i < max; i++) {
       const x = 8 + i * 6, full = i < this.ammo, part = i === this.ammo ? this.ammoT / REGEN : 0;
@@ -207,7 +247,7 @@
   };
   const helpO = UI.helpHTML;
   UI.helpHTML = function () {
-    const h = helpO.apply(this, arguments), tip = '<div class="entry"><b>Ember Shot:</b> fire with G / B (touch: SHOT). Hold UP or DOWN to aim; shots lean toward foes in view. You carry 3 shots that refill on their own. Hold the button to charge a <b>Lance</b> (2 shots) that pierces foes, shields and enemy shots, cracks walls in one hit, and launches you upward when fired down mid-air.</div>';
+    const h = helpO.apply(this, arguments), tip = '<div class="entry"><b>Ember Shot</b> (after the Thornmother): fire with G / B. Hold UP or DOWN to aim; on touch, drag from SHOT to aim or just tap it to fire at the nearest foe. Shots lean toward foes in view. You carry 3 shots that refill on their own. Hold the button to charge a <b>Lance</b> (2 shots) that pierces foes, shields and enemy shots, cracks walls in one hit, and launches you upward when fired down mid-air.</div>';
     const i = h.lastIndexOf('</div></div>');
     return i < 0 ? h : h.slice(0, i) + tip + h.slice(i);
   };
