@@ -50,16 +50,37 @@ with sync_playwright() as p:
     # play each mini game for a while with mashed inputs, from the pause menu, and check results + medal reward
     pg.evaluate("LF.UI.menu('arcade')"); pg.wait_for_timeout(300)
     if SP: pg.screenshot(path=SP + '/arcade_tab.png')
-    for gid in ['moth', 'range', 'hop', 'echo']:
+    for gid in pg.evaluate('Object.keys(LF.Arcade.GAMES)'):
         res = pg.evaluate('''(id)=>{
           const G=LF.G,In=LF.input,A=LF.Arcade; A.from='pause'; A.play(id); const keys=['left','right','jump','attack','up','down','shoot'];
-          for(let i=0;i<60*70 && !A.cur.shown;i++){ if(i%9===0){const k=keys[(i/9)%keys.length|0]; In.set(k,true);} if(i%9===4) keys.forEach(k=>In.set(k,false)); if(i%30===0) A.taps.push({x:160,y:100}); G.update(1/60); A.render(document.getElementById('game').getContext('2d')); In.endFrame(); }
+          for(let i=0;i<60*100 && !A.cur.shown;i++){ if(i%9===0){const k=keys[(i/9)%keys.length|0]; In.set(k,true);} if(i%9===4) keys.forEach(k=>In.set(k,false)); if(i%30===0) A.taps.push({x:160,y:100}); G.update(1/60); A.render(document.getElementById('game').getContext('2d')); In.endFrame(); }
           return {state:LF.state, shown:A.cur&&A.cur.shown, score:A.cur&&A.cur.st.score}}''', gid)
         print(gid, res)
         if SP: pg.screenshot(path=SP + '/mini_' + gid + '.png')
         assert res['state'] == 'mini' and res['shown'], gid
+    # skill bots reach gold in the newer games, so every medal is attainable
+    bots = pg.evaluate('''(seed)=>{ const G=LF.G,In=LF.input,A=LF.Arcade,out={},W=LF.W; const rnd0=Math.random; Math.random=LF.rng(seed); // repeatable runs
+      const run=(id,brain,max)=>{ A.from='title'; A.play(id); A.cur.ready=0; for(let i=0;i<max && !A.cur.over;i++){ brain(A.cur.st,i); G.update(1/60); In.endFrame(); } const sc=A.cur.st.score; out[id]=[sc,A.medal(id,sc)]; A.cur.st.over=true; A.quit(); };
+      // stack: drop when the slider lines up with the top block
+      run('stack',(st)=>{ const top=st.tower[st.tower.length-1]; if(Math.abs(st.cur.x-top.x)<2 && st.tower.length<60) A.taps.push({x:0,y:0}); },60*120);
+      // flight: flap when below the middle of the next gap
+      run('flight',(st)=>{ const v=st.vines.find(v=>v.x+14>70); const aimY=v?v.gy+v.gh/2+8:96; if(st.y>aimY && st.vy>0) A.taps.push({x:0,y:0}); },60*90);
+      // breaker: keep the paddle under the ball, offset a little to angle shots
+      run('breaker',(st)=>{ if(st.stuck){A.taps.push({x:st.px,y:0});return;}
+        const b=st.balls.reduce((m,q)=>q.vy>0&&(!m||q.y>m.y)?q:m,null)||st.balls[0]; let want=b.x; if(b.vy>0){ let x=b.x+b.vx*(160-b.y)/b.vy; while(x<3||x>W-3) x=x<3?6-x:2*(W-3)-x; want=x; }
+        In.set('left',st.px>want+2); In.set('right',st.px<want-2); },60*95);
+      In.set('left',false); In.set('right',false);
+      // snake: steer toward food (gold first), avoid walls and tail with a one-step check
+      run('snake',(st)=>{ if(st.stepT>1/60) return; const h=st.body[0], f=st.gold||st.food, D=[[1,0],[-1,0],[0,1],[0,-1]];
+        const free=(x,y)=>x>=0&&y>=0&&x<30&&y<14&&!st.body.slice(0,-1).some(s=>s.x===x&&s.y===y);
+        const room=(x,y)=>{ const seen=new Set([x+','+y]), q=[[x,y]]; let n=0; while(q.length&&n<60){ const [a,b]=q.pop(); n++; for(const [dx,dy] of D){ const k=(a+dx)+','+(b+dy); if(!seen.has(k)&&free(a+dx,b+dy)){seen.add(k);q.push([a+dx,b+dy]);} } } return n; };
+        let best=null,bs=-1e9; for(const [dx,dy] of D){ if(dx===-st.dir.x&&dy===-st.dir.y) continue; const x=h.x+dx,y=h.y+dy; if(!free(x,y)) continue; const sc=-Math.abs(f.x-x)-Math.abs(f.y-y)+Math.min(room(x,y),40)*2; if(sc>bs){bs=sc;best={x:dx,y:dy};} }
+        if(best) st.next=best; },60*150);
+      Math.random=rnd0; return out}''', 42)
+    print('bots', bots)
+    for gid, (sc, med) in bots.items(): assert med == 3, gid + ' gold not reached by bot: ' + str(sc)
     # a forced gold score pays embers once, and quitting returns to the pause menu
-    r2 = pg.evaluate('''()=>{ const G=LF.G,A=LF.Arcade; const e0=G.save.embers; A.play('moth'); A.cur.ready=0; A.cur.st.score=900; A.cur.st.over=true; for(let i=0;i<70;i++) G.update(1/60);
+    r2 = pg.evaluate('''()=>{ const G=LF.G,A=LF.Arcade; LF.UI.clearScreen(); G.setState('paused'); A.from='pause'; const e0=G.save.embers; A.play('moth'); A.cur.ready=0; A.cur.st.score=900; A.cur.st.over=true; for(let i=0;i<70;i++) G.update(1/60);
       const paid=G.save.embers-e0, med=G.save.ext.medals.moth; A.play('moth'); A.cur.ready=0; A.cur.st.score=900; A.cur.st.over=true; for(let i=0;i<70;i++) G.update(1/60);
       const again=G.save.embers-e0; A.quit(); return {paid,med,again,state:LF.state}}''')
     print('reward', r2); assert r2['paid'] >= 100 and r2['again'] == r2['paid'] and r2['med'] == 3 and r2['state'] == 'paused', 'rewards'
