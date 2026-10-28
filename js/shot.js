@@ -36,9 +36,10 @@
   };
 
   /* ---------- aiming: 8 directions from the held keys, then a gentle snap toward a foe in line of sight ---------- */
+  const blocks = ch => ch !== 'H' && Phys.solid(ch); // lantern grates ('H') stop bodies but let flame through
   function clear(x0, y0, x1, y1) {
     const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 8);
-    for (let i = 1; i < n; i++) if (Phys.solid(G.tile(Math.floor((x0 + (x1 - x0) * i / n) / T), Math.floor((y0 + (y1 - y0) * i / n) / T)))) return false;
+    for (let i = 1; i < n; i++) if (blocks(G.tile(Math.floor((x0 + (x1 - x0) * i / n) / T), Math.floor((y0 + (y1 - y0) * i / n) / T)))) return false;
     return true;
   }
   function aim(pl) {
@@ -48,9 +49,10 @@
     // a plain touch tap has no way to aim, so it looks for a foe across a much wider arc
     const cone = LF.touchAim == null && In.lastDevice === 'touch' && !u && !d ? 1.25 : .38;
     let best = null, bs = 1e9;
-    for (const e of G.enemies) {
-      if (e.dead || (e.kind === 'boss' && !e.active)) continue;
-      const ex = e.x + e.w / 2, ey = e.y + e.h / 2, dx = ex - pl.cx, dy = ey - pl.cy, dist = Math.hypot(dx, dy);
+    const pts = G.enemies.filter(e => !e.dead && !(e.kind === 'boss' && !e.active)).map(e => ({ x: e.x + e.w / 2, y: e.y + e.h / 2 }));
+    if (LF.aimExtra) pts.push(...LF.aimExtra()); // puzzle targets
+    for (const q of pts) {
+      const ex = q.x, ey = q.y, dx = ex - pl.cx, dy = ey - pl.cy, dist = Math.hypot(dx, dy);
       if (dist > 210 || dist < 4) continue;
       let da = Math.abs(Math.atan2(dy, dx) - a); if (da > Math.PI) da = TAU - da;
       if (da > cone) continue;
@@ -103,7 +105,15 @@
       b.x += b.vx * dt; b.y += b.vy * dt;
       let dead = b.life <= 0;
       const tx = Math.floor(b.x / T), ty = Math.floor(b.y / T);
-      if (!dead && Phys.solid(G.tile(tx, ty))) { dead = true; hitWall(b, tx, ty); G.burst(b.x, b.y, b.lance ? 10 : 4, b.col, 60, 1); }
+      if (!dead && blocks(G.tile(tx, ty))) {
+        hitWall(b, tx, ty); G.burst(b.x, b.y, b.lance ? 10 : 4, b.col, 60, 1);
+        if (pl.hasCharm('glass') && !b.lance && !b.bounced && G.tile(tx, ty) !== 'S') { // Glass Ember: ricochet once off the face it struck
+          const px = b.x - b.vx * dt, py = b.y - b.vy * dt, hx = blocks(G.tile(Math.floor(b.x / T), Math.floor(py / T))), hy = blocks(G.tile(Math.floor(px / T), Math.floor(b.y / T)));
+          if (hx || !hy) b.vx = -b.vx; if (hy || !hx) b.vy = -b.vy;
+          b.x = px; b.y = py; b.bounced = true; b.life = Math.max(b.life, .35); b.hit.clear(); G.sfx('crack');
+        } else dead = true;
+      }
+      if (!dead && LF.shotHit && LF.shotHit(b)) dead = true; // puzzle mirrors and targets
       const box = { x: b.x - b.r, y: b.y - b.r, w: b.r * 2, h: b.r * 2 };
       if (!dead) for (const e of G.enemies.slice()) {
         if (e.dead || b.hit.has(e) || (e.kind === 'boss' && !e.active)) continue;
