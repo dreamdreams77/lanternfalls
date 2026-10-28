@@ -7,6 +7,7 @@
   Object.assign(G, { shots: [], ammo: 3, ammoT: 0, chargeT: 0, chReady: false, shotCD: 0, hopUsed: false });
   const ext = () => { const e = G.save.ext = G.save.ext || {}; e.shotHits = e.shotHits || 0; e.lanceKills = e.lanceKills || 0; e.pops = e.pops || 0; return e; };
   const up = k => (G.save.up || {})[k] || 0;
+  const hasShot = s => !!s.abil.shot;
   G.maxAmmo = function () { return 3 + up('quiver'); };
 
   /* ---------- icons, charms, shop ---------- */
@@ -16,9 +17,9 @@
   S.ICONS.lance = ['........', '......w.', 'yyyyYYww', 'YYYYYYYw', 'yyyyYYww', '......w.', '........', '........'];
   LF.CHARMS.spitfire = { name: 'Spitfire', icon: 'spitfire', desc: 'Ember Shots fork into three.' };
   LF.CHARMS.seeker = { name: 'Seeker Ember', icon: 'seeker', desc: 'Ember Shots curve toward nearby foes.' };
-  LF.SHOP.splice(LF.SHOP.findIndex(i => i.type === 'slot'), 0, { id: 'spitfire', type: 'charm', cost: 190 });
-  LF.SHOP.push({ id: 'quiver', type: 'up', key: 'quiver', name: 'Ember Quiver', icon: 'quiver', desc: 'Carry one more Ember Shot.', costs: [140, 280] },
-    { id: 'lance', type: 'up', key: 'lance', name: 'Kindled Lance', icon: 'lance', desc: 'Charged Lances hit harder.', costs: [180, 340] });
+  LF.SHOP.splice(LF.SHOP.findIndex(i => i.type === 'slot'), 0, { id: 'spitfire', type: 'charm', cost: 190, need: hasShot });
+  LF.SHOP.push({ id: 'quiver', type: 'up', key: 'quiver', name: 'Ember Quiver', icon: 'quiver', desc: 'Carry one more Ember Shot.', costs: [140, 280], need: hasShot },
+    { id: 'lance', type: 'up', key: 'lance', name: 'Kindled Lance', icon: 'lance', desc: 'Charged Lances hit harder.', costs: [180, 340], need: hasShot });
   S.ICONS.shot = ['........', '..yy....', '.yYwy.y.', 'yYwwYyyy', '.yYwy.y.', '..yy....', '........', '........'];
   LF.ABIL_INFO.shot = ['Ember Shot', 'Fire embers from afar. Hold to charge a Lance.', 'shot'];
   LF.TIPS.shot = LF.TIPS.shoot = ['G or B fires an Ember Shot (aim with UP / DOWN). Hold it to charge a piercing Lance.', 'Tap SHOT to fire at the nearest foe. Drag from SHOT to aim. Hold it to charge a piercing Lance.'];

@@ -123,6 +123,7 @@
     const render = () => {
       grid.innerHTML = ''; items.length = 0; bal.innerHTML = 'Embers: <b style="color:#ffd27a">' + s.embers + '</b>';
       LF.SHOP.forEach(it => {
+        if (it.need && !it.need(s)) return; // stocked only once it is useful
         const i = info(it), card = h('div', 'card' + (i.sold ? ' locked' : '') + (!i.sold && s.embers < i.cost ? ' locked' : ''));
         card.innerHTML = '<img class="ic" src="' + S.icon(i.icon) + '"><div><b>' + i.name + '</b><span>' + i.desc + '</span><span style="color:' + (i.sold ? '#7dffb0' : '#ffd27a') + '">' + (i.sold ? 'Owned' : i.cost + ' embers') + '</span></div>';
         card.addEventListener('click', () => buy(it)); grid.append(card); items.push(card);

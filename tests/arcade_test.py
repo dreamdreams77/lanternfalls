@@ -34,6 +34,11 @@ with sync_playwright() as p:
     print('shot', r)
     assert r['locked'] and r['unlocked'] and r['bossShot'] == 0.5 and r['bossLance'] == 3 and r['fired'] and r['ammoUsed'] == 1 and r['killed'] and r['refilled'] and r['ready'] and r['lance'] and r['pierce'], 'ember shot'
     if SP: pg.screenshot(path=SP + '/shot.png')
+    # Pip stocks the shot items only once Ember Shot is unlocked
+    stock = pg.evaluate('''()=>{ const G=LF.G, names=()=>[...document.querySelectorAll('.card b')].map(b=>b.textContent); const out={};
+      G.save.abil.shot=false; LF.UI.shop(); out.before=names().some(n=>/Spitfire|Ember Quiver|Kindled Lance/.test(n)); LF.UI.clearScreen();
+      G.save.abil.shot=true; LF.UI.shop(); out.after=['Spitfire','Ember Quiver','Kindled Lance'].every(k=>names().includes(k)); LF.UI.clearScreen(); G.setState('play'); return out}''')
+    print('shop', stock); assert not stock['before'] and stock['after'], 'shop gating'
     # touch: dragging up from the SHOT button aims straight up
     pg.evaluate("LF.settings.touch='on'; LF.refreshTouch(); LF.G.enemies=[]; LF.G.shots=[]; LF.G.ammo=LF.G.maxAmmo()")
     bb = pg.locator('#touch [data-k=shoot]').bounding_box(); cx, cy = bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2
