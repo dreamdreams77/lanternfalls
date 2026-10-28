@@ -3,7 +3,7 @@
   'use strict';
   const LF = window.LF, G = LF.G, UI = LF.UI, h = UI.h, S = LF.Sprites;
   const sfx = n => LF.Audio.sfx(n);
-  const TABS = [['pause', 'Pause'], ['charms', 'Charms'], ['map', 'Map'], ['journal', 'Journal'], ['bounty', 'Bounties'], ['stats', 'Stats'], ['help', 'Help']];
+  const TABS = [['pause', 'Pause'], ['charms', 'Charms'], ['map', 'Map'], ['journal', 'Journal'], ['bounty', 'Bounties'], ['arcade', 'Arcade'], ['stats', 'Stats'], ['help', 'Help']];
 
   UI.closeMenu = function () { UI.clearScreen(); G.setState('play'); LF.input.clear(); sfx('back'); };
 
@@ -123,6 +123,7 @@
     const render = () => {
       grid.innerHTML = ''; items.length = 0; bal.innerHTML = 'Embers: <b style="color:#ffd27a">' + s.embers + '</b>';
       LF.SHOP.forEach(it => {
+        if (it.need && !it.need(s)) return; // stocked only once it is useful
         const i = info(it), card = h('div', 'card' + (i.sold ? ' locked' : '') + (!i.sold && s.embers < i.cost ? ' locked' : ''));
         card.innerHTML = '<img class="ic" src="' + S.icon(i.icon) + '"><div><b>' + i.name + '</b><span>' + i.desc + '</span><span style="color:' + (i.sold ? '#7dffb0' : '#ffd27a') + '">' + (i.sold ? 'Owned' : i.cost + ' embers') + '</span></div>';
         card.addEventListener('click', () => buy(it)); grid.append(card); items.push(card);
@@ -157,7 +158,7 @@
 
   UI.newGamePlus = function () {
     const o = G.save, n = LF.newSave();
-    n.ng = o.ng + 1; n.abil = { dbl: true, dash: true, glide: true }; n.charms = o.charms.slice(); n.eq = o.eq.slice(); n.slots = o.slots;
+    n.ng = o.ng + 1; n.abil = { dbl: true, dash: true, glide: true, shot: true }; n.charms = o.charms.slice(); n.eq = o.eq.slice(); n.slots = o.slots;
     n.dmgLvl = o.dmgLvl; n.lightLvl = o.lightLvl; n.flaskLvl = o.flaskLvl; n.maxHp = o.maxHp; n.hp = o.maxHp; n.lore = o.lore.slice(); n.flags = { started: 1 };
     Object.keys(o.seen).forEach(k => { if (k.indexOf('tip:') === 0) n.seen[k] = 1; });
     LF.Save.write(n); UI.clearScreen(); G.fade.a = 1; G.start(n); UI.banner('New Game+ ' + n.ng, 'The dark remembers');

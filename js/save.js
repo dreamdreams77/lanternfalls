@@ -10,7 +10,7 @@
     del(k) { try { localStorage.removeItem(k); } catch (_) { delete mem[k]; } }
   };
 
-  LF.defaultSettings = () => ({ music: 0.6, sfx: 0.8, amb: 0.7, mute: false, shake: true, touch: 'auto', reduce: false });
+  LF.defaultSettings = () => ({ music: 0.6, sfx: 0.8, amb: 0.7, mute: false, shake: true, touch: 'auto', reduce: false, view: 'fit', tsize: 'm' });
   LF.loadSettings = function () {
     let s = LF.defaultSettings();
     try { const r = JSON.parse(store.get(SET_KEY) || 'null'); if (r) s = Object.assign(s, r); } catch (_) {}
