@@ -64,8 +64,10 @@ with sync_playwright() as p:
       at(15,9); shoot({R}); out.violetOpen=lit()===1;
       at(17,12); shoot({U}); out.phase=G.pzPhase;
       at(15,4); shoot({R}); at(5,6); shoot({L});
-      out.lit=lit(); out.open=gateOpen(); return out }}''')
-    print('F', f1); assert f1['blueClosed'] and f1['violetOpen'] and f1['phase'] == 1 and f1['lit'] == 3 and f1['open'], 'gallery F'
+      out.lit=lit(); out.open=gateOpen();
+      at(22,12); G.pzPhase=1; shoot({U}); out.innerSwitch=G.pzPhase===0;   // the crystal inside the eye chamber lets you out
+      return out }}''')
+    print('F', f1); assert f1['blueClosed'] and f1['violetOpen'] and f1['phase'] == 1 and f1['lit'] == 3 and f1['open'] and f1['innerSwitch'], 'gallery F'
     if SP: pg.screenshot(path=SP + '/gal_switch.png')
     g1 = pg.evaluate(f'''()=>{{ const G=LF.G,out={{}}; go('gal_prism');
       at(10,8); shoot({U}); out.pairAlone=lit()===0;                       // one eye of a pair goes dark again

@@ -30,9 +30,11 @@ with sync_playwright() as p:
       G.shots.push({x:bx-6,y:by,vx:280,vy:0,life:1,r:2,dmg:1,lance:false,hit:new Set(),tr:[],col:'#fff'}); step(1); out.bossShot=h0-bs.hp; G.hitstopT=0;
       G.shots.push({x:bx-6,y:by,vx:280,vy:0,life:1,r:4,dmg:5,lance:true,hit:new Set(),tr:[],col:'#fff'}); step(1); out.bossLance=h0-bs.hp-out.bossShot;
       G.enemies=[]; G.shots=[];
+      // a held charge is dropped by a menu, so it never fires by itself on return
+      G.shots=[]; In.set('shoot',true); step(60); LF.UI.menu('pause'); step(3); LF.UI.closeMenu(); step(3); out.noAutoLance=!G.shots.some(s=>s.lance); In.clear();
       out.noErr=true; return out}''')
     print('shot', r)
-    assert r['locked'] and r['unlocked'] and r['bossShot'] == 0.5 and r['bossLance'] == 3 and r['fired'] and r['ammoUsed'] == 1 and r['killed'] and r['refilled'] and r['ready'] and r['lance'] and r['pierce'], 'ember shot'
+    assert r['noAutoLance'] and r['locked'] and r['unlocked'] and r['bossShot'] == 0.5 and r['bossLance'] == 3 and r['fired'] and r['ammoUsed'] == 1 and r['killed'] and r['refilled'] and r['ready'] and r['lance'] and r['pierce'], 'ember shot'
     if SP: pg.screenshot(path=SP + '/shot.png')
     # Pip stocks the shot items only once Ember Shot is unlocked
     stock = pg.evaluate('''()=>{ const G=LF.G, names=()=>[...document.querySelectorAll('.card b')].map(b=>b.textContent); const out={};
@@ -58,6 +60,11 @@ with sync_playwright() as p:
         print(gid, res)
         if SP: pg.screenshot(path=SP + '/mini_' + gid + '.png')
         assert res['state'] == 'mini' and res['shown'], gid
+    # snake: biting the tail while still growing ends the run
+    bite = pg.evaluate('''()=>{ const G=LF.G,A=LF.Arcade; A.from='title'; A.play('snake'); A.cur.ready=0; const st=A.cur.st;
+      st.body=[{x:5,y:5},{x:5,y:6},{x:6,y:6},{x:6,y:5}]; st.dir={x:1,y:0}; st.grow=2; st.stepT=0; st.food={x:20,y:10}; G.update(1/60);
+      const over=st.over===true; st.over=true; A.quit(); return over }''')
+    assert bite, 'snake growing tail'
     # skill bots reach gold in the newer games, so every medal is attainable
     bots = pg.evaluate('''(seed)=>{ const G=LF.G,In=LF.input,A=LF.Arcade,out={},W=LF.W; const rnd0=Math.random; Math.random=LF.rng(seed); // repeatable runs
       const run=(id,brain,max)=>{ A.from='title'; A.play(id); A.cur.ready=0; for(let i=0;i<max && !A.cur.over;i++){ brain(A.cur.st,i); G.update(1/60); In.endFrame(); } const sc=A.cur.st.score; out[id]=[sc,A.medal(id,sc)]; A.cur.st.over=true; A.quit(); };

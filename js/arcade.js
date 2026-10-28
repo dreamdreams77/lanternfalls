@@ -406,7 +406,7 @@
         if (st.stepT > 0) return;
         st.stepT = Math.max(.065, .13 - st.eaten * .003);
         const h = st.body[0], n = { x: h.x + st.dir.x, y: h.y + st.dir.y };
-        if (n.x < 0 || n.y < 0 || n.x >= GW || n.y >= GH || st.body.slice(0, -1).some(s => s.x === n.x && s.y === n.y)) { st.over = true; sfx('hurt'); pfx(st, SX + h.x * SC + 5, SY + h.y * SC + 5, '#ff8a3d', 18, 90); return; }
+        if (n.x < 0 || n.y < 0 || n.x >= GW || n.y >= GH || st.body.slice(0, st.grow > 0 ? st.body.length : -1).some(s => s.x === n.x && s.y === n.y)) { st.over = true; sfx('hurt'); pfx(st, SX + h.x * SC + 5, SY + h.y * SC + 5, '#ff8a3d', 18, 90); return; }
         st.body.unshift(n);
         const at = q => q && q.x === n.x && q.y === n.y, cx = SX + n.x * SC + 5, cy = SY + n.y * SC + 5;
         if (at(st.food)) { st.eaten++; st.grow += 2; st.score += 10; tone(988 + (st.eaten % 6) * 70, .07, .05, 'square'); pfx(st, cx, cy, '#ffd27a', 6, 40); snakeFood(st); if (st.eaten % 5 === 0) snakeGold(st); }
