@@ -151,6 +151,7 @@
     }
     for (const pr of items('prism')) {
       if (b.pri === pr || !near(pr, 7)) continue;
+      if (G.shots.length > 40) return true; // aligned prisms must not multiply shots without end
       const c = ctr(pr); G.sfx('glow'); G.burst(c.x, c.y, 10, '#c8e8ff', 70, 0); pr.flash = .2;
       for (const s of [1, -1]) G.shots.push(Object.assign({}, b, { x: c.x, y: c.y, vx: -b.vy * s, vy: b.vx * s, pri: pr, life: Math.max(b.life, 1.3), hit: new Set(), tr: [] }));
       return true;
@@ -160,7 +161,8 @@
       if (b.mir === m || Math.abs(b.x - c.x) > 7 || Math.abs(b.y - c.y) > 7) continue;
       const vx = b.vx, vy = b.vy;
       if (m.dir === '/') { b.vx = -vy; b.vy = -vx; } else { b.vx = vy; b.vy = vx; }
-      b.x = c.x; b.y = c.y; b.mir = m; b.life = Math.max(b.life, 1.3); b.tr.length = 0; m.flash = .2;
+      b.x = c.x; b.y = c.y; b.mir = m; b.tr.length = 0; m.flash = .2;
+      b.refl = (b.refl || 0) + 1; if (b.refl <= 8) b.life = Math.max(b.life, 1.3); // facing mirrors must not keep a shot alive forever
       G.sfx('glow'); G.burst(c.x, c.y, 6, '#c8e8ff', 60, 0);
     }
     for (const t of items('target')) {
