@@ -21,4 +21,4 @@ jobs:
           python3 -m http.server 8123 &
           sleep 1
           mkdir -p /tmp/shots
-          for t in smoke boss_bot seasons pwa depth3 depth4 physics; do echo "== $t"; python3 tests/${t}_test.py /tmp/shots; done
+          for t in smoke boss_bot seasons pwa depth3 depth4 physics arcade; do echo "== $t"; python3 tests/${t}_test.py /tmp/shots; done

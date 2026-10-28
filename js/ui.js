@@ -102,6 +102,7 @@
       items.push(this.btn('New Game', () => { if (sum) this.confirm('Start a new game? Your current save will be overwritten.', 'Overwrite', () => this.start(true)); else this.start(true); }));
       items.push(this.btn('Settings', () => this.settings(() => this.title())));
       items.push(this.btn('How to Play', () => this.help(() => this.title())));
+      if (LF.Arcade) items.push(this.btn('Mini Games', () => LF.Arcade.open('title')));
       if (LF.pwa && LF.pwa.deferred && !LF.pwa.standalone) items.push(this.btn('Install App', () => LF.pwa.install(), 'sm'));
       if (sum) items.push(this.btn('Delete Save', () => this.confirm('Delete your save permanently? This cannot be undone.', 'Delete', () => { LF.Save.remove(); sfx('lose'); this.toast('Save deleted'); this.title(); }), 'danger sm'));
       m.append(...items); s.append(m, h('div', 'hint', 'Arrows/WASD · Enter or Space to select'));
@@ -132,6 +133,11 @@
       tog('Screen shake', () => st.shake ? 'ON' : 'OFF', () => { st.shake = !st.shake; });
       tog('Reduce flashes', () => st.reduce ? 'ON' : 'OFF', () => { st.reduce = !st.reduce; });
       tog('Touch controls', () => st.touch.toUpperCase(), () => { st.touch = { auto: 'on', on: 'off', off: 'auto' }[st.touch]; });
+      tog('Screen', () => st.view === 'rotate' ? 'ROTATE' : 'FIT', () => { st.view = st.view === 'rotate' ? 'fit' : 'rotate'; LF.resize && LF.resize(); });
+      tog('Button size', () => ({ s: 'SMALL', m: 'MEDIUM', l: 'LARGE' })[st.tsize] || 'MEDIUM', () => { st.tsize = { s: 'm', m: 'l', l: 's' }[st.tsize] || 'l'; });
+      let fs = LF.isFullscreen && LF.isFullscreen(); // fullscreen switches asynchronously, so track the requested state for the label
+      if (LF.canFullscreen && LF.canFullscreen()) tog('Fullscreen', () => fs ? 'ON' : 'OFF', () => { fs = !fs; LF.toggleFullscreen(); });
+      p.append(h('div', 'hint', 'Screen ROTATE turns the game sideways on a portrait phone, so it fills the screen held in landscape.'));
       const bk = this.btn('Back', () => { sfx('back'); back && back(); }); p.append(h('div', 'hint', '')); const mw = h('div', 'menu'); mw.style.margin = '.6em auto 0'; mw.append(bk); p.append(mw);
       s.append(p); this.show(s); items.push(bk);
       this.setNav(items, a => { if (a === 'pause') { bk.click(); return true; } if (a === 'left' || a === 'right') { const b = items[this.nav.sel]; if (b && b.classList.contains('tog')) b.click(); return true; } return false; });
@@ -140,7 +146,7 @@
     /* ---------- how to play ---------- */
     helpHTML() {
       return '<div class="cols"><div class="col"><h3>Keyboard</h3>' +
-        [['Move', 'A / D · ← →'], ['Jump (hold = higher)', 'Space · Z · K'], ['Strike (+ ↑/↓ aim)', 'X · J · Enter'], ['Dash', 'C · Shift · L'], ['Interact / Read / Talk', '↑ · W · E'], ['Kindle (heal)', 'Hold ↓ on ground'], ['Flare (needs gauge)', 'V · F · Q'], ['Pause / Menu', 'Esc · P'], ['Map · Charms', 'M · I / Tab']].map(r => '<div class="stat"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('') +
+        [['Move', 'A / D · ← →'], ['Jump (hold = higher)', 'Space · Z · K'], ['Strike (+ ↑/↓ aim)', 'X · J · Enter'], ['Ember Shot (hold = Lance)', 'G · B · O'], ['Dash', 'C · Shift · L'], ['Interact / Read / Talk', '↑ · W · E'], ['Kindle (heal)', 'Hold ↓ on ground'], ['Flare (needs gauge)', 'V · F · Q'], ['Pause / Menu', 'Esc · P'], ['Map · Charms', 'M · I / Tab']].map(r => '<div class="stat"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('') +
         '</div><div class="col"><h3>Tips</h3><div class="entry">Light <b>shrines</b> to save and heal. Dying drops your embers where you fell; recover them.</div><div class="entry">Strike <b>down</b> in the air to bounce off foes and spikes.</div><div class="entry">Cracked walls break with 3 strikes. <b>Orange</b> cracks need the Dash. Some walls are only illusions.</div><div class="entry">Hits fill your <b>Flare</b> gauge. Spend it to blast nearby foes. Strike an incoming shot to <b>deflect</b> it back; strike just as it arrives for a perfect parry. Chain kills for bonus embers, and watch for <b>elite</b> foes with glowing auras.</div><div class="entry"><b>Seasonal boards:</b> after the Thornmother a storm portal opens in the Glade. Clear it to unlock the snow portal. Both are replayable bonus boards.</div><div class="entry"><b>Install:</b> use your browser menu (Install app, or Add to Home Screen). Lanternfall then plays offline.</div><div class="entry">Moths, heart fragments and charms hide in secret places. Gamepads work too.</div></div></div>';
     },
     help(back) {

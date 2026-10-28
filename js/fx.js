@@ -228,7 +228,7 @@
   const updO = G.update;
   G.update = function (dt) {
     if (this.state === 'play' && this.room && this.player) {
-      rec(this.player); this.enemies.forEach(rec); this.drops.forEach(rec); this.projectiles.forEach(rec); this.bolts.forEach(rec);
+      rec(this.player); this.enemies.forEach(rec); this.drops.forEach(rec); this.projectiles.forEach(rec); this.bolts.forEach(rec); if (this.shots) this.shots.forEach(rec);
       this.cam._px = this.cam.x; this.cam._py = this.cam.y;
     }
     updO.call(this, dt);
@@ -244,7 +244,7 @@
       if (Math.abs(x - o._px) < 40 && Math.abs(y - o._py) < 40) { saved.push(o, x, y); o.x = o._px + (x - o._px) * a; o.y = o._py + (y - o._py) * a; }
     };
     if (this.state === 'play' && this.room && this.player) {
-      lerp(this.player); this.enemies.forEach(lerp); this.drops.forEach(lerp); this.projectiles.forEach(lerp); this.bolts.forEach(lerp);
+      lerp(this.player); this.enemies.forEach(lerp); this.drops.forEach(lerp); this.projectiles.forEach(lerp); this.bolts.forEach(lerp); if (this.shots) this.shots.forEach(lerp);
       if (cam._px !== undefined && Math.abs(cx - cam._px) < 40 && Math.abs(cy - cam._py) < 40) { cam.x = cam._px + (cx - cam._px) * a; cam.y = cam._py + (cy - cam._py) * a; }
     }
     cam.x = Math.round(cam.x); cam.y = Math.round(cam.y);

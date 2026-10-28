@@ -43,7 +43,7 @@
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
     ArrowUp: 'up', KeyW: 'up', KeyE: 'up', ArrowDown: 'down', KeyS: 'down',
     Space: 'jump', KeyZ: 'jump', KeyK: 'jump',
-    KeyX: 'attack', KeyJ: 'attack', Enter: 'attack',
+    KeyX: 'attack', KeyJ: 'attack', Enter: 'attack', KeyG: 'shoot', KeyB: 'shoot', KeyO: 'shoot',
     KeyC: 'dash', KeyL: 'dash', ShiftLeft: 'dash', ShiftRight: 'dash',
     KeyV: 'flare', KeyF: 'flare', KeyQ: 'flare', Escape: 'pause', KeyP: 'pause', KeyM: 'map', Tab: 'inv', KeyI: 'inv'
   };
@@ -88,7 +88,7 @@
       b.addEventListener('pointercancel', rel);
       b.addEventListener('lostpointercapture', rel);
     });
-    const show = () => root.classList.toggle('hidden', !LF.touchOn());
+    const show = () => { root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
     LF.refreshTouch = show;
     window.addEventListener('touchstart', () => {
       if (!LF.touchDetected) { LF.touchDetected = true; show(); } In.lastDevice = 'touch';
@@ -97,9 +97,9 @@
   };
   LF.touchOn = () => {
     const s = LF.settings;
-    if (s && s.touch === 'on') return LF.state === 'play' || LF.state === 'paused';
+    if (s && s.touch === 'on') return LF.state === 'play' || LF.state === 'paused' || LF.state === 'mini';
     if (s && s.touch === 'off') return false;
-    return !!LF.touchDetected && (LF.state === 'play');
+    return !!LF.touchDetected && (LF.state === 'play' || LF.state === 'mini');
   };
 
   // Gamepad (optional, standard mapping)
@@ -114,7 +114,7 @@
     const ax = p.axes[0] || 0, ay = p.axes[1] || 0;
     const m = {
       left: ax < -0.4 || b(14), right: ax > 0.4 || b(15), up: ay < -0.6 || b(12), down: ay > 0.6 || b(13),
-      jump: b(0), attack: b(2) || b(1), dash: b(5) || b(7) || b(3), flare: b(4) || b(6), pause: b(9), map: b(8)
+      jump: b(0), attack: b(2), shoot: b(1), dash: b(5) || b(7) || b(3), flare: b(4) || b(6), pause: b(9), map: b(8)
     };
     for (const k in m) {
       if (m[k] !== !!padPrev[k]) { In.set(k, m[k], 'pad'); if (m[k]) LF.bus.emit('key', { action: k, code: 'pad' }); }

@@ -3,7 +3,7 @@
   'use strict';
   const LF = window.LF, G = LF.G, UI = LF.UI, h = UI.h, S = LF.Sprites;
   const sfx = n => LF.Audio.sfx(n);
-  const TABS = [['pause', 'Pause'], ['charms', 'Charms'], ['map', 'Map'], ['journal', 'Journal'], ['bounty', 'Bounties'], ['stats', 'Stats'], ['help', 'Help']];
+  const TABS = [['pause', 'Pause'], ['charms', 'Charms'], ['map', 'Map'], ['journal', 'Journal'], ['bounty', 'Bounties'], ['arcade', 'Arcade'], ['stats', 'Stats'], ['help', 'Help']];
 
   UI.closeMenu = function () { UI.clearScreen(); G.setState('play'); LF.input.clear(); sfx('back'); };
 

@@ -32,6 +32,7 @@ There is also a **single-file build**, `dist/lanternfall-single.html`, with ever
 | Move | A / D, arrow keys | on-screen arrows |
 | Jump (hold = higher) | Space, Z, K | JUMP |
 | Strike (hold Up/Down to aim) | X, J, Enter | HIT |
+| Ember Shot (hold Up/Down to aim, hold to charge a Lance) | G, B, O | SHOT |
 | Dash (once unlocked) | C, Shift, L | DASH |
 | Interact / talk / read | Up, W, E | ACT |
 | Kindle (heal with embers) | hold Down on the ground | hold the down button |
@@ -39,7 +40,9 @@ There is also a **single-file build**, `dist/lanternfall-single.html`, with ever
 | Pause / menu | Esc, P | II |
 | Map / Charms | M / I, Tab | MAP |
 
-Gamepads (standard mapping) work as well. Touch controls appear automatically on touch devices and can be forced on or off in Settings.
+Gamepads (standard mapping) work as well; the B button fires Ember Shots. Touch controls appear automatically on touch devices and can be forced on or off in Settings, with a Small / Medium / Large button size.
+
+**Bigger on phones (optional):** Settings → **Screen: ROTATE** turns the game sideways while the phone is upright, so it fills the whole screen when you hold the phone in landscape, even with rotation lock on. You can also tap the "Rotate your device" banner to switch it on. Where the browser supports it, **Fullscreen** hides the browser bars and asks for landscape. The default, **FIT**, is unchanged.
 
 ## Features
 
@@ -61,6 +64,9 @@ Gamepads (standard mapping) work as well. Touch controls appear automatically on
 - **Bounties and Bestiary:** a pause-menu tab with 7 auto-claimed bounties (embers, charms, a charm slot, a heart) and a bestiary of every foe.
 - **Ember Graze:** dash through a foe or an incoming shot to feed the Flare gauge and earn an ember. **Air Chain:** keep pogoing off foes without landing for bonus Flare and embers. Two new bounties (Needle Thread, Sky Dancer) and new Stats rows track them.
 - **Frenzied elites** (a fifth affix) enrage at half health and charge much faster. Two new charms, **Needle Wick** (double Flare from grazes, brief safety after dashing) and **Skyfire** (richer Air Chains), are earned from bounties, which now number 14.
+- **Ember Shot:** a real ranged attack. Fire with G / B (touch: SHOT), aim 8 ways with Up/Down and the arrows, and shots lean toward foes in view (aim assist with line of sight). You carry 3 shots that refill on their own (HUD pips under the Flare gauge). Hold the button to charge a **Lance** (2 shots) that pierces foes, Shielded guards and enemy shots, cracks walls in one hit, and launches you upward when fired straight down mid-air (once per jump). Normal shots knock enemy shots out of the air; Shielded elites block them from the front.
+- **Shot depth:** two charms (**Spitfire** forks shots into three, sold by Pip; **Seeker Ember** makes shots curve toward foes, from a bounty), two shop upgrades (**Ember Quiver** for more shots, **Kindled Lance** for harder Lances) and three bounties (Sharpshooter, Lancer, Skeet Flame).
+- **Ember Arcade mini games**, from the title screen (**Mini Games**) or the pause menu (**Arcade** tab): **Moth Catcher** (catch falling moths, dodge thorn seeds), **Ember Range** (a shooting gallery with combos, reloads and an accuracy bonus; tap to shoot on touch), **Flame Hop** (an endless runner with double hops, thorns and bats) and **Lantern Echo** (repeat the lantern sequence). Each has bronze, silver and gold medals and a best score. Played from the pause menu during a journey, a new medal pays embers once (25 / 50 / 100), and two bounties reward medals in every game.
 - Optional **Trial of Embers** (5 waves) and **New Game+** (stronger foes, keep your gear) after the ending.
 - Four NPCs with distinct voices (Wick, Pip, Marrow, Vesper), and a working shop.
 
@@ -103,6 +109,8 @@ js/depth2.js          night wisps, NPC hints for new systems
 js/depth3.js          Ember Graze, Air Chain, soul wisps, new bounties and stats
 js/fx3.js             heat and water shimmer, light streaks, ground light pool
 js/depth4.js          Frenzied elites, Needle Wick and Skyfire charms, more bounties
+js/shot.js            Ember Shot: aiming, aim assist, ammo, charged Lance, shot charms, upgrades and bounties
+js/arcade.js          Ember Arcade: four mini games, medals, best scores and rewards
 js/fx2.js             lamp-lit surfaces, water depth and caustics, chromatic fringe, dash streaks
 js/fx.js              bloom, grading, weather, shafts, fog, shadows, HUD extras
 js/ui.js, js/ui2.js   menus, dialog, shop, map, journal, ending
@@ -122,6 +130,7 @@ python3 tests/smoke_test.py /tmp/shots       # loads all 20 rooms, checks doors,
 python3 tests/boss_bot_test.py /tmp/shots    # a bot defeats all 4 bosses and clears the Trial
 python3 tests/depth4_test.py                 # frenzied enrage, new charms and bounties
 python3 tests/depth3_test.py                 # graze, air chain, hit-stop input buffering, Phoenix Ash reset
+python3 tests/arcade_test.py                 # Ember Shot and Lance, all four mini games, medal rewards, rotate screen mode
 ```
 
 Both tests report any console or page errors. You can also play it by hand and open the browser console; the game object is exposed as `window.LF`.
@@ -149,5 +158,5 @@ Honest limitations:
 - A full start-to-finish route through every room was not machine-solved, so some secrets and jump sequences may feel harder or easier than intended. The bot tests cover bosses and systems, not routing.
 - Audio is synthesized, so it sounds chiptune-like rather than composed; it starts after the first click or key press (browser autoplay rules).
 - Art is procedural pixel art; there is no sprite-sheet editor or external asset pipeline.
-- Touch controls are fixed on-screen buttons; portrait phones work but landscape is recommended.
+- Touch controls are fixed on-screen buttons; portrait phones work but landscape (or Screen: ROTATE) is recommended.
 - Saves live in one browser profile; there is a single save slot.
