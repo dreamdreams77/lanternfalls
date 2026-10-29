@@ -119,3 +119,20 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
 .mg-quit{position:absolute;top:calc(var(--u)*.5);left:calc(var(--u)*.5);z-index:25;pointer-events:auto}
 .medal{display:inline-block;width:.8em;height:.8em;border-radius:50%;margin-left:.15em;vertical-align:-.05em;border:2px solid #0b0a1a}
 .medal.m1{background:#c8834a}.medal.m2{background:#c8d0e0}.medal.m3{background:#ffd23a}.medal.m0{background:#2a1f4a}
+
+/* touch devices: fingertip-sized targets in every menu */
+body.touchui .btn{padding:calc(var(--u)*.85) calc(var(--u)*1.4);font-size:calc(var(--u)*1.05)}
+body.touchui .btn.sm{padding:calc(var(--u)*.75) calc(var(--u)*.9);font-size:calc(var(--u)*.9);min-height:calc(var(--u)*2.6)}
+body.touchui .menu{gap:calc(var(--u)*.8)}
+body.touchui .tabs{gap:calc(var(--u)*.55)}
+body.touchui .tabs .btn.sm{padding:calc(var(--u)*.75) calc(var(--u)*.7)}
+body.touchui .card{padding:calc(var(--u)*.7)}
+body.touchui .row{margin:calc(var(--u)*.7) 0}
+body.touchui input[type=range]{height:calc(var(--u)*1.1);width:calc(var(--u)*10)}
+body.touchui input[type=range]::-webkit-slider-thumb{width:calc(var(--u)*1.6);height:calc(var(--u)*2.2)}
+body.touchui input[type=range]::-moz-range-thumb{width:calc(var(--u)*1.6);height:calc(var(--u)*2.2)}
+body.touchui .tog{min-width:calc(var(--u)*6)}
+body.touchui .panel{max-height:96%}
+body.touchui .entry,body.touchui .stat{font-size:calc(var(--u)*.95)}
+body.touchui .hint{font-size:calc(var(--u)*.85)}
+body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}

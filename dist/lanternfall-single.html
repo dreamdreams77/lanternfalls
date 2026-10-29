@@ -134,6 +134,23 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
 .medal{display:inline-block;width:.8em;height:.8em;border-radius:50%;margin-left:.15em;vertical-align:-.05em;border:2px solid #0b0a1a}
 .medal.m1{background:#c8834a}.medal.m2{background:#c8d0e0}.medal.m3{background:#ffd23a}.medal.m0{background:#2a1f4a}
 
+/* touch devices: fingertip-sized targets in every menu */
+body.touchui .btn{padding:calc(var(--u)*.85) calc(var(--u)*1.4);font-size:calc(var(--u)*1.05)}
+body.touchui .btn.sm{padding:calc(var(--u)*.75) calc(var(--u)*.9);font-size:calc(var(--u)*.9);min-height:calc(var(--u)*2.6)}
+body.touchui .menu{gap:calc(var(--u)*.8)}
+body.touchui .tabs{gap:calc(var(--u)*.55)}
+body.touchui .tabs .btn.sm{padding:calc(var(--u)*.75) calc(var(--u)*.7)}
+body.touchui .card{padding:calc(var(--u)*.7)}
+body.touchui .row{margin:calc(var(--u)*.7) 0}
+body.touchui input[type=range]{height:calc(var(--u)*1.1);width:calc(var(--u)*10)}
+body.touchui input[type=range]::-webkit-slider-thumb{width:calc(var(--u)*1.6);height:calc(var(--u)*2.2)}
+body.touchui input[type=range]::-moz-range-thumb{width:calc(var(--u)*1.6);height:calc(var(--u)*2.2)}
+body.touchui .tog{min-width:calc(var(--u)*6)}
+body.touchui .panel{max-height:96%}
+body.touchui .entry,body.touchui .stat{font-size:calc(var(--u)*.95)}
+body.touchui .hint{font-size:calc(var(--u)*.85)}
+body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
+
 </style>
 </head>
 <body>
@@ -238,6 +255,8 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
 
   // Touch / pointer buttons
   LF.initTouch = function () {
+    // phones and tablets report a coarse primary pointer, so the touch layout is right from the first screen (not after the first tap)
+    try { if (window.matchMedia && matchMedia('(pointer: coarse)').matches) LF.touchDetected = true; } catch (_) {}
     const root = document.getElementById('touch');
     const active = new Map();
     root.querySelectorAll('.tbtn').forEach(b => {
@@ -253,7 +272,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
       b.addEventListener('pointercancel', rel);
       b.addEventListener('lostpointercapture', rel);
     });
-    const show = () => { root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.classList.toggle('noshot', !(LF.G && LF.G.save && LF.G.save.abil.shot)); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
+    const show = () => { document.body.classList.toggle('touchui', !!LF.touchDetected || (LF.settings || {}).touch === 'on'); root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.classList.toggle('noshot', !(LF.G && LF.G.save && LF.G.save.abil.shot)); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
     LF.refreshTouch = show;
     window.addEventListener('touchstart', () => {
       if (!LF.touchDetected) { LF.touchDetected = true; show(); } In.lastDevice = 'touch';
@@ -2616,11 +2635,11 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
       tog('Screen shake', () => st.shake ? 'ON' : 'OFF', () => { st.shake = !st.shake; });
       tog('Reduce flashes', () => st.reduce ? 'ON' : 'OFF', () => { st.reduce = !st.reduce; });
       tog('Touch controls', () => st.touch.toUpperCase(), () => { st.touch = { auto: 'on', on: 'off', off: 'auto' }[st.touch]; });
-      tog('Screen', () => st.view === 'rotate' ? 'ROTATE' : 'FIT', () => { st.view = st.view === 'rotate' ? 'fit' : 'rotate'; LF.resize && LF.resize(); });
+      tog('Screen', () => !st.viewSet ? 'AUTO' : st.view === 'rotate' ? 'ROTATE' : 'FIT', () => { if (!st.viewSet) { st.viewSet = true; st.view = 'rotate'; } else if (st.view === 'rotate') st.view = 'fit'; else { st.viewSet = false; st.view = 'fit'; } LF.resize && LF.resize(); });
       tog('Button size', () => ({ s: 'SMALL', m: 'MEDIUM', l: 'LARGE' })[st.tsize] || 'MEDIUM', () => { st.tsize = { s: 'm', m: 'l', l: 's' }[st.tsize] || 'l'; });
       let fs = LF.isFullscreen && LF.isFullscreen(); // fullscreen switches asynchronously, so track the requested state for the label
       if (LF.canFullscreen && LF.canFullscreen()) tog('Fullscreen', () => fs ? 'ON' : 'OFF', () => { fs = !fs; LF.toggleFullscreen(); });
-      p.append(h('div', 'hint', 'Screen ROTATE turns the game sideways on a portrait phone, so it fills the screen held in landscape.'));
+      p.append(h('div', 'hint', 'Screen AUTO and ROTATE turn the game sideways on a portrait phone so it fills the screen; FIT keeps it upright.'));
       const bk = this.btn('Back', () => { sfx('back'); back && back(); }); p.append(h('div', 'hint', '')); const mw = h('div', 'menu'); mw.style.margin = '.6em auto 0'; mw.append(bk); p.append(mw);
       s.append(p); this.show(s); items.push(bk);
       this.setNav(items, a => { if (a === 'pause') { bk.click(); return true; } if (a === 'left' || a === 'right') { const b = items[this.nav.sel]; if (b && b.classList.contains('tog')) b.click(); return true; } return false; });
@@ -5086,7 +5105,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
   rot.innerHTML = 'Rotate your device for a bigger view<br><u>or tap here to turn the game sideways</u><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:18px">&times;</span>';
   let rotHidden = false;
   rot.addEventListener('click', e => {
-    if (e.target.tagName !== 'SPAN') { LF.settings.view = 'rotate'; LF.saveSettings(); } else rotHidden = true;
+    if (e.target.tagName !== 'SPAN') { LF.settings.view = 'rotate'; LF.settings.viewSet = true; LF.saveSettings(); } else rotHidden = true;
     resize();
   });
   document.body.appendChild(rot);
@@ -5103,7 +5122,9 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
   }
   function resize() {
     const vw = window.innerWidth, vh = window.innerHeight, st = LF.settings || {};
-    const portrait = vh > vw * 1.15, turned = LF.rotated = st.view === 'rotate' && vh > vw;
+    // screen mode: 'auto' (default) turns the stage sideways on a portrait touch device so it fills the phone; FIT and ROTATE are explicit choices
+    const mode = st.viewSet ? st.view : 'auto';
+    const portrait = vh > vw * 1.15, turned = LF.rotated = (mode === 'rotate' || (mode === 'auto' && LF.touchDetected)) && vh > vw;
     const s = turned ? Math.min(vh / 960, vw / 540) : Math.min(vw / 960, vh / 540);
     sizeView(s);
     stage.style.transform = 'translate(-50%,-50%)' + (turned ? ' rotate(90deg)' : '') + ' scale(' + s + ')';
