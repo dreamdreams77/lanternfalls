@@ -10,7 +10,7 @@
     simO.call(this, dt);
     if (this.hitstopT > 0 || this.state !== 'play') return;
     const r = this.room, pl = this.player;
-    if (r.area !== 'moss' || this.boss || r.id === 'trial') return;
+    if (r.area !== 'moss' || this.boss || r.id === 'trial' || r.pz) return; // no wisps in the puzzle galleries: they would soak up puzzle shots
     const night = this.enemies.filter(e => e.night && !e.dead);
     if ((this.tod || 0) < .15) { for (const e of night) { this.burst(e.x + 5, e.y + 5, 8, '#9af0d8', 50, 0); this.enemies.splice(this.enemies.indexOf(e), 1); } return; }
     if ((this.tod || 0) < .35) return;
