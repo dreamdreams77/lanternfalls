@@ -14,7 +14,7 @@
   rot.innerHTML = 'Rotate your device for a bigger view<br><u>or tap here to turn the game sideways</u><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:18px">&times;</span>';
   let rotHidden = false;
   rot.addEventListener('click', e => {
-    if (e.target.tagName !== 'SPAN') { LF.settings.view = 'rotate'; LF.saveSettings(); } else rotHidden = true;
+    if (e.target.tagName !== 'SPAN') { LF.settings.view = 'rotate'; LF.settings.viewSet = true; LF.saveSettings(); } else rotHidden = true;
     resize();
   });
   document.body.appendChild(rot);
@@ -31,7 +31,9 @@
   }
   function resize() {
     const vw = window.innerWidth, vh = window.innerHeight, st = LF.settings || {};
-    const portrait = vh > vw * 1.15, turned = LF.rotated = st.view === 'rotate' && vh > vw;
+    // screen mode: 'auto' (default) turns the stage sideways on a portrait touch device so it fills the phone; FIT and ROTATE are explicit choices
+    const mode = st.viewSet ? st.view : 'auto';
+    const portrait = vh > vw * 1.15, turned = LF.rotated = (mode === 'rotate' || (mode === 'auto' && LF.touchDetected)) && vh > vw;
     const s = turned ? Math.min(vh / 960, vw / 540) : Math.min(vw / 960, vh / 540);
     sizeView(s);
     stage.style.transform = 'translate(-50%,-50%)' + (turned ? ' rotate(90deg)' : '') + ' scale(' + s + ')';
@@ -73,7 +75,7 @@
   window.addEventListener('error', e => fatal(e.error || e.message));
 
   /* ---------- boot ---------- */
-  LF.loadSettings(); resize(); LF.initTouch(); LF.UI.init();
+  LF.loadSettings(); resize(); LF.initTouch(); resize(); LF.UI.init(); // size again once touch is known, so AUTO turns a phone's first screen too
   const unlock = () => { LF.Audio.init(); };
   ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, unlock, { passive: true }));
   document.addEventListener('visibilitychange', () => { if (document.hidden && LF.state === 'play') LF.UI.menu('pause'); });

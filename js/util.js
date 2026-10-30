@@ -73,6 +73,8 @@
 
   // Touch / pointer buttons
   LF.initTouch = function () {
+    // phones and tablets report a coarse primary pointer, so the touch layout is right from the first screen (not after the first tap)
+    try { if (window.matchMedia && matchMedia('(pointer: coarse)').matches) LF.touchDetected = true; } catch (_) {}
     const root = document.getElementById('touch');
     const active = new Map();
     root.querySelectorAll('.tbtn').forEach(b => {
@@ -88,7 +90,7 @@
       b.addEventListener('pointercancel', rel);
       b.addEventListener('lostpointercapture', rel);
     });
-    const show = () => { root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.classList.toggle('noshot', !(LF.G && LF.G.save && LF.G.save.abil.shot)); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
+    const show = () => { document.body.classList.toggle('touchui', !!LF.touchDetected || (LF.settings || {}).touch === 'on'); root.classList.toggle('hidden', !LF.touchOn()); root.classList.toggle('mini', LF.state === 'mini'); root.classList.toggle('noshot', !(LF.G && LF.G.save && LF.G.save.abil.shot)); root.style.setProperty('--tb', { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1); };
     LF.refreshTouch = show;
     window.addEventListener('touchstart', () => {
       if (!LF.touchDetected) { LF.touchDetected = true; show(); } In.lastDevice = 'touch';

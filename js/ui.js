@@ -133,11 +133,11 @@
       tog('Screen shake', () => st.shake ? 'ON' : 'OFF', () => { st.shake = !st.shake; });
       tog('Reduce flashes', () => st.reduce ? 'ON' : 'OFF', () => { st.reduce = !st.reduce; });
       tog('Touch controls', () => st.touch.toUpperCase(), () => { st.touch = { auto: 'on', on: 'off', off: 'auto' }[st.touch]; });
-      tog('Screen', () => st.view === 'rotate' ? 'ROTATE' : 'FIT', () => { st.view = st.view === 'rotate' ? 'fit' : 'rotate'; LF.resize && LF.resize(); });
+      tog('Screen', () => !st.viewSet ? 'AUTO' : st.view === 'rotate' ? 'ROTATE' : 'FIT', () => { if (!st.viewSet) { st.viewSet = true; st.view = 'rotate'; } else if (st.view === 'rotate') st.view = 'fit'; else { st.viewSet = false; st.view = 'fit'; } LF.resize && LF.resize(); });
       tog('Button size', () => ({ s: 'SMALL', m: 'MEDIUM', l: 'LARGE' })[st.tsize] || 'MEDIUM', () => { st.tsize = { s: 'm', m: 'l', l: 's' }[st.tsize] || 'l'; });
       let fs = LF.isFullscreen && LF.isFullscreen(); // fullscreen switches asynchronously, so track the requested state for the label
       if (LF.canFullscreen && LF.canFullscreen()) tog('Fullscreen', () => fs ? 'ON' : 'OFF', () => { fs = !fs; LF.toggleFullscreen(); });
-      p.append(h('div', 'hint', 'Screen ROTATE turns the game sideways on a portrait phone, so it fills the screen held in landscape.'));
+      p.append(h('div', 'hint', 'Screen AUTO and ROTATE turn the game sideways on a portrait phone so it fills the screen; FIT keeps it upright.'));
       const bk = this.btn('Back', () => { sfx('back'); back && back(); }); p.append(h('div', 'hint', '')); const mw = h('div', 'menu'); mw.style.margin = '.6em auto 0'; mw.append(bk); p.append(mw);
       s.append(p); this.show(s); items.push(bk);
       this.setNav(items, a => { if (a === 'pause') { bk.click(); return true; } if (a === 'left' || a === 'right') { const b = items[this.nav.sel]; if (b && b.classList.contains('tog')) b.click(); return true; } return false; });
