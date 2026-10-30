@@ -1,4 +1,4 @@
-# Solves all eight Lamplight Galleries with real shots (mirrors, pivot and spinning mirrors, Lance-only eyes, drifting eyes, grates, timers, numbered eyes, switch blocks, prisms and paired eyes)
+# Solves all twelve Lamplight Galleries with real shots (mirrors, pivot and spinning mirrors, Lance-only eyes, drifting eyes, grates, timers, numbered eyes, switch blocks, prisms and paired eyes, blinking, relay and red eyes, warp rings)
 # and checks the failure cases. Usage: serve on :8123, then python3 tests/puzzles_test.py [screenshot dir]
 import sys
 from playwright.sync_api import sync_playwright
@@ -19,7 +19,7 @@ with sync_playwright() as p:
       // doorways only appear once Ember Shot is unlocked
       G.loadRoom('rootbridge',null,{x:60,y:150}); out.hiddenBefore=!G.items.some(i=>i.gallery);
       G.save.abil.shot=true; G.loadRoom('rootbridge',null,{x:60,y:150}); out.shownAfter=G.items.some(i=>i.gallery&&i.to==='gal_moss');
-      ['g_cavern','d_entry','s_foot','thicket','g_altar','d_glide','s_climb'].forEach(h=>{G.loadRoom(h,null,{x:60,y:100}); out['door_'+h]=G.items.some(i=>i.gallery);});
+      ['g_cavern','d_entry','s_foot','thicket','g_altar','d_glide','s_climb','stump','g_descent','d_chasm'].forEach(h=>{G.loadRoom(h,null,{x:60,y:100}); out['door_'+h]=G.items.some(i=>i.gallery);});
       // a strike does not wake an eye
       go('gal_moss'); at(9,12); LF.input.set('up',true); LF.input.set('attack',true); step(1); LF.input.set('attack',false); LF.input.set('up',false); step(20); out.strikeNoLight=lit()===0; return out}''')
     print('doors', r); assert all(r.values()), 'doorways'
@@ -85,6 +85,38 @@ with sync_playwright() as p:
       G.interact(G.items.find(i=>i.type==='chest')); out.kindle=G.save.charms.includes('kindle'); out.master=!!G.save.bounties.lamp2; return out }}''')
     print('H', h1); assert h1['iron'] == 1 and h1['spun'] == 3 and h1['lit'] == 4 and h1['open'] and h1['kindle'] and h1['master'], 'gallery H'
     if SP: pg.screenshot(path=SP + '/gal_spin.png')
+    pg.evaluate("""()=>{ const G=LF.G; window.waitOpen=(t,ahead)=>{ const P=LF.Puzzles; let k=0; while(k++<600 && !(P.isOpen(t,ahead-.08)&&P.isOpen(t,ahead)&&P.isOpen(t,ahead+.08))) step(1); };
+      window.eye=(x,y)=>G.items.find(i=>i.type==='target'&&i.x===x&&i.y===y); }""")
+    i1 = pg.evaluate(f'''()=>{{ const G=LF.G,out={{}}; go('gal_blink');
+      const b1=eye(8,3), b2=eye(20,11), b3=eye(17,4);
+      let k=0; while(k++<600 && LF.Puzzles.isOpen(b1,.44)) step(1); at(8,12); shoot({U}); out.closedShrugs=lit()===0;   // fired to arrive while shut
+      waitOpen(b1,.44); at(8,12); shoot({U}); out.one=lit();
+      at(3,12); shoot({R}); out.redFloorResets=lit()===0;                                // the red eye in the floor line
+      waitOpen(b3,.38); at(17,12); shoot({U},true); out.lancePiercesToRed=lit()===0;     // a Lance passes the open eye into the red one
+      waitOpen(b1,.44); at(8,12); shoot({U}); waitOpen(b3,.38); at(17,12); shoot({U}); waitOpen(b2,.17); at(23,12); shoot({L});
+      out.lit=lit(); out.which=[b1.lit,b2.lit,b3.lit]; out.open=gateOpen(); return out }}''')
+    print('I', i1); assert i1['closedShrugs'] and i1['one'] == 1 and i1['redFloorResets'] and i1['lancePiercesToRed'] and i1['lit'] == 3 and i1['open'], 'gallery I'
+    if SP: pg.screenshot(path=SP + '/gal_blink.png')
+    j1 = pg.evaluate(f'''()=>{{ const G=LF.G,out={{}}; go('gal_relay');
+      at(5,12); shoot({U},false,160); out.chainOne=lit();                                            // relay over the wall, relay down at the sealed eye
+      at(3,12); shoot({R}); out.lit=lit(); out.open=gateOpen(); return out }}''')
+    print('J', j1); assert j1['chainOne'] == 3 and j1['lit'] == 6 and j1['open'], 'gallery J'
+    if SP: pg.screenshot(path=SP + '/gal_relay.png')
+    k1 = pg.evaluate(f'''()=>{{ const G=LF.G,out={{}}; go('gal_warp');
+      at(12,12); shoot({U}); out.ringB=lit(); at(9,12); shoot({R}); out.redResets=lit()===0;
+      at(3,12); shoot({R}); at(12,12); shoot({U}); at(14,12); shoot({U});
+      out.lit=lit(); out.open=gateOpen(); return out }}''')
+    print('K', k1); assert k1['ringB'] == 1 and k1['redResets'] and k1['lit'] == 3 and k1['open'], 'gallery K'
+    if SP: pg.screenshot(path=SP + '/gal_warp.png')
+    l1 = pg.evaluate(f'''()=>{{ const G=LF.G,out={{}}; go('gal_crown');
+      at(10,14); shoot({R},true,60); out.ironUnderRed=lit();                               // the Lance runs under the hovering red eye
+      at(13,9); shoot({UR},false,40); out.diagonal=lit();
+      waitOpen(eye(26,4),.86); at(8,14); shoot({L},false,70); out.chain=lit();             // relay -> warp ring -> blinking eye, timed (wakes both)
+      out.lit=lit(); out.open=gateOpen();
+      G.interact(G.items.find(i=>i.type==='chest')); out.crown=G.save.charms.includes('crown'); out.grand=!!G.save.bounties.lamp3;
+      G.save.eq=['crown']; G.ammo=0; G.flare=100; G.doFlare(); out.refill=G.ammo===G.maxAmmo(); return out }}''')
+    print('L', l1); assert l1['ironUnderRed'] == 1 and l1['diagonal'] == 2 and l1['chain'] == 4 and l1['lit'] == 4 and l1['open'] and l1['crown'] and l1['grand'] and l1['refill'], 'gallery L'
+    if SP: pg.screenshot(path=SP + '/gal_crown.png')
     e = pg.evaluate(f'''()=>{{ const G=LF.G,out={{}};
       G.save.eq=['glass']; G.loadRoom('glade',null,{{x:60,y:150}}); G.enemies=[]; step(5); at(2,12);
       G.ammo=3; LF.touchAim={L}; LF.input.set('shoot',true); step(1); LF.input.set('shoot',false); step(8); LF.touchAim=null;

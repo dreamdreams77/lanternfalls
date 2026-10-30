@@ -3580,7 +3580,7 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
     simO.call(this, dt);
     if (this.hitstopT > 0 || this.state !== 'play') return;
     const r = this.room, pl = this.player;
-    if (r.area !== 'moss' || this.boss || r.id === 'trial') return;
+    if (r.area !== 'moss' || this.boss || r.id === 'trial' || r.pz) return; // no wisps in the puzzle galleries: they would soak up puzzle shots
     const night = this.enemies.filter(e => e.night && !e.dead);
     if ((this.tod || 0) < .15) { for (const e of night) { this.burst(e.x + 5, e.y + 5, 8, '#9af0d8', 50, 0); this.enemies.splice(this.enemies.indexOf(e), 1); } return; }
     if ((this.tod || 0) < .35) return;
@@ -4242,7 +4242,7 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
 
 </script>
 <script>
-/* Lanternfall - Lamplight Galleries: optional shooting puzzle rooms with ember eyes (targets), mirrors, prisms, switch blocks, lantern grates and ember gates */
+/* Lanternfall - Lamplight Galleries: optional shooting puzzle rooms with ember eyes (targets), mirrors, prisms, switch blocks, warp rings, relay, blinking and red eyes, lantern grates and ember gates */
 (function () {
   'use strict';
   const LF = window.LF, G = LF.G, T = LF.T, W = LF.W, S = LF.Sprites, UI = LF.UI, Phys = LF.Phys, Room = LF.Room, L = LF.Rooms.list;
@@ -4263,12 +4263,18 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
   LF.CHARMS.kindle = { name: 'Lamplight Wick', icon: 'kindle', desc: 'Ember Shots refill 30% faster.' };
   LF.LORE.order = ['Order Plaque', 'Some eyes keep count. Wake them in the order of their marks, or all of them close again. Mind what stands in your line of fire.'];
   LF.LORE.switch = ['Switch Plaque', 'Shoot the crystal and the blue and violet stones trade places: what was wall becomes air, what was air becomes wall.'];
+  LF.LORE.blink = ['Blinking Plaque', 'Some eyes sleep and wake to their own rhythm; a closed eye shrugs off flame. Red eyes hate the flame: wake one and every eye goes dark.'];
+  LF.LORE.relay = ['Relay Plaque', 'A relay eye, once woken, throws its own flame onward in the way its arrow points. One shot can wake a whole chain.'];
+  LF.LORE.warp = ['Warp Plaque', 'Paired rings swallow flame and breathe it out of their twin, still flying the same way.'];
+  S.ICONS.crown = ['........', 'y..y..y.', 'yy.yy.yy', 'yYyYYyYy', 'yYYwwYYy', 'yyyyyyyy', '.kkkkkk.', '........'];
+  LF.CHARMS.crown = { name: 'Ember Crown', icon: 'crown', desc: 'Unleashing Flare refills your Ember Shots.' };
+  LF.BOUNTIES.push({ id: 'lamp3', name: 'Grand Lamplighter', desc: 'Solve all twelve Lamplight Galleries.', test: s => [ALL.filter(id => s.flags['pz:' + id]).length, ALL.length], reward: 'slot', rtxt: '+1 charm slot' });
   LF.LORE.prism = ['Prism Plaque', 'A prism parts one flame into two. Paired eyes, ringed in green, must wake together or not at all.'];
-  LF.BOUNTIES.push({ id: 'lamp2', name: 'Master Lamplighter', desc: 'Solve all eight Lamplight Galleries.', test: s => [ALL.filter(id => s.flags['pz:' + id]).length, ALL.length], reward: 'embers:300', rtxt: '300 embers' });
+  LF.BOUNTIES.push({ id: 'lamp2', name: 'Master Lamplighter', desc: 'Solve the first eight Lamplight Galleries.', test: s => [EIGHT.filter(id => s.flags['pz:' + id]).length, EIGHT.length], reward: 'embers:300', rtxt: '300 embers' });
   LF.BOUNTIES.push({ id: 'lamp', name: 'Lamplighter', desc: 'Solve all four Lamplight Galleries.', test: s => [GALS.filter(id => s.flags['pz:' + id]).length, GALS.length], reward: 'heart', rtxt: '+1 heart' });
 
   /* ---------- the four galleries ---------- */
-  const GALS = ['gal_moss', 'gal_glim', 'gal_drown', 'gal_spire'], ALL = GALS.concat(['gal_order', 'gal_switch', 'gal_prism', 'gal_spin']);
+  const GALS = ['gal_moss', 'gal_glim', 'gal_drown', 'gal_spire'], EIGHT = GALS.concat(['gal_order', 'gal_switch', 'gal_prism', 'gal_spin']), ALL = EIGHT.concat(['gal_blink', 'gal_relay', 'gal_warp', 'gal_crown']);
   const NAMES = {};
   // host room, doorway tile in it, and the gallery's floor row (for the return trip and arrival point)
   function gallery(id, host, hx, hy, build) {
@@ -4348,12 +4354,66 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
     r.e('chest', 29, 13, { give: 'charm:kindle' });
     return r;
   });
+  // I: blinking eyes can only wake while open. Red eyes reset the room: one hides behind a blinking eye (a Lance pierces into it),
+  //    one sits in the floor line, so the far eye must be shot from the gate side.
+  gallery('gal_blink', 'stump', 18, 9, () => {
+    const r = Room('gal_blink', 'Blinking Hall', 'moss', 30, 14, 2, 8, 2, 1, 'mossroot').f(12); r.floorRow = 12;
+    r.pz = { timer: 0 }; r.ambience = { wind: .1, chirp: .3 };
+    r.b(25, 1, 1, 11, 'E').p(5, 8, 3);
+    r.e('lore', 5, 11, { id: 'blink' }).e('target', 8, 3, { blink: 2.4, open: .5 }).e('target', 20, 11, { blink: 2, open: .5 }).e('target', 17, 4, { blink: 3, open: .55 });
+    r.e('redeye', 14, 11).e('redeye', 17, 2).e('chest', 28, 11, { give: 'embers:120' });
+    return r;
+  });
+  // J: relay eyes fire onward when woken. Chain one: up into a relay that fires over the wall into a relay that fires down at a sealed eye.
+  //    Chain two: along the floor into a relay that fires up into one that fires left through a grate at a pocketed eye.
+  gallery('gal_relay', 'g_descent', 14, 25, () => {
+    const r = Room('gal_relay', 'Relay Vault', 'glim', 32, 14, 5, 8, 2, 1, 'glimmer').f(12); r.floorRow = 12;
+    r.pz = { timer: 0 }; r.ambience = { drip: .4, drone: .25 };
+    r.b(20, 3, 1, 9).b(27, 1, 1, 11, 'E').b(1, 6, 3, 1).b(1, 4, 3, 1).s(3, 5, 'H');
+    r.e('lore', 7, 11, { id: 'relay' }).e('target', 5, 2, { fire: 'r' }).e('target', 24, 2, { fire: 'd' }).e('target', 24, 10);
+    r.e('target', 10, 11, { fire: 'u' }).e('target', 10, 5, { fire: 'l' }).e('target', 1, 5).e('chest', 30, 11, { give: 'embers:140' });
+    return r;
+  });
+  // K: warp rings carry shots into two sealed chambers; the third pair feeds a mirror. A red eye waits behind the floor ring.
+  gallery('gal_warp', 'd_chasm', 24, 13, () => {
+    const r = Room('gal_warp', 'Warp Gallery', 'drown', 30, 14, 8, 8, 2, 1, 'drowned').f(12); r.floorRow = 12;
+    r.pz = { timer: 0 }; r.ambience = { drip: .5, water: .25, drone: .15 };
+    r.b(17, 1, 1, 11).b(17, 6, 8, 1).b(25, 1, 1, 11, 'E');
+    r.e('lore', 5, 11, { id: 'warp' }).e('warp', 8, 11, { pid: 'a' }).e('warp', 19, 3, { pid: 'a' }).e('target', 21, 3);
+    r.e('warp', 12, 2, { pid: 'b' }).e('warp', 20, 10, { pid: 'b' }).e('target', 20, 7);
+    r.e('warp', 14, 6, { pid: 'c' }).e('warp', 23, 2, { pid: 'c' }).e('mirror', 23, 1, { dir: '\\' }).e('target', 18, 1);
+    r.e('redeye', 10, 11).e('chest', 28, 11, { give: 'embers:160' });
+    return r;
+  });
+  // L: timed finale. A relay fires up through a warp ring at a blinking eye (time the whole chain); an iron eye waits behind a grate
+  //    under a hovering red eye; a diagonal shot slips past a red eye that guards the straight-up line.
+  gallery('gal_crown', 's_climb', 12, 41, () => {
+    const r = Room('gal_crown', 'Grand Lantern', 'spire', 34, 16, 11, 8, 2, 1, 'spire').f(14); r.floorRow = 14;
+    r.pz = { timer: 15 }; r.ambience = { wind: .25, crack: .4, drone: .2 };
+    r.b(22, 1, 1, 11).b(22, 12, 1, 2, 'H').b(29, 1, 1, 13, 'E').p(8, 11, 2).p(12, 9, 3);
+    r.e('target', 4, 13, { fire: 'u' }).e('warp', 4, 6, { pid: 'a' }).e('warp', 26, 9, { pid: 'a' }).e('target', 26, 4, { blink: 2.5, open: .6 });
+    r.e('target', 27, 13, { heavy: 1 }).e('redeye', 24, 12).e('target', 17, 4).e('redeye', 17, 6).e('redeye', 26, 2);
+    r.e('chest', 32, 13, { give: 'charm:crown' });
+    return r;
+  });
+
+  /* ---------- Ember Crown: a Flare refills your shots ---------- */
+  const flareO = G.doFlare;
+  G.doFlare = function () {
+    const before = (this.save.ext || {}).flares || 0, r = flareO.apply(this, arguments);
+    if (((this.save.ext || {}).flares || 0) > before && this.player.hasCharm('crown') && this.save.abil.shot) { this.ammo = this.maxAmmo(); this.floatText(this.player.cx, this.player.y - 18, 'SHOTS REFILLED', '#ffd27a'); }
+    return r;
+  };
 
   /* ---------- state ---------- */
   const items = type => G.items.filter(i => i.type === type);
   const ctr = it => ({ x: it.cx, y: it.by - 8 + (it.oy || 0) });
   const solved = () => !!(G.room && G.save.flags['pz:' + G.room.id]);
   const nextOrd = () => 1 + items('target').filter(t => t.ord && t.lit).length;
+  // a blinking eye is open for the first `open` share of each `blink` seconds (offset per eye); `ahead` looks into the future
+  const isOpen = (t, ahead) => !t.blink || ((G.clock + (ahead || 0) + (t.ph || 0) * .37) % t.blink) < t.blink * (t.open || .5);
+  LF.Puzzles = { isOpen };
+  const DIRS = { r: [1, 0], l: [-1, 0], u: [0, -1], d: [0, 1] }, WARP_COL = { a: '#c49bff', b: '#7ad8ff', c: '#7dffb0' };
   // aim assist leans toward unlit eyes (only the next one, in a numbered room). Drifting eyes are left out:
   // assist would aim where they are now, undoing the lead a player gives a moving target.
   LF.aimExtra = () => (G.room && G.room.pz && !solved()) ? items('target').filter(t => !t.lit && !t.drift && (!t.ord || t.ord === nextOrd())).map(ctr) : [];
@@ -4381,7 +4441,9 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
   function light(t) {
     const c = ctr(t), all = items('target');
     if (t.ord && t.ord !== nextOrd()) { G.burst(c.x, c.y, 10, '#ff6f7d', 70, 0); dim('WRONG ORDER'); return; }
-    t.lit = true; t.litAt = G.clock; G.sfx('glow'); G.sfx('ok'); G.burst(c.x, c.y, 14, '#ffd27a', 90, 0); G.ring(c.x, c.y, '#ffb23a', 14);
+    t.lit = true; t.litAt = G.clock;
+    if (t.fire) { const d = DIRS[t.fire]; G.shots.push({ x: c.x, y: c.y, vx: d[0] * 280, vy: d[1] * 280, life: 1.4, r: 2, dmg: 1, lance: false, hit: new Set(), tr: [], col: '#ffd27a', relay: t }); G.ring(c.x, c.y, '#ffd27a', 18); } // a relay throws its flame onward
+    G.sfx('glow'); G.sfx('ok'); G.burst(c.x, c.y, 14, '#ffd27a', 90, 0); G.ring(c.x, c.y, '#ffb23a', 14);
     const n = all.filter(x => x.lit).length; G.floatText(c.x, c.y - 10, n + ' / ' + all.length, '#ffd27a');
     if (n >= all.length) { solve(); return; }
     if (G.room.pz.timer && G.pzT <= 0) G.pzT = G.room.pz.timer;
@@ -4402,6 +4464,19 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
       for (const s of [1, -1]) G.shots.push(Object.assign({}, b, { x: c.x, y: c.y, vx: -b.vy * s, vy: b.vx * s, pri: pr, life: Math.max(b.life, 1.3), hit: new Set(), tr: [] }));
       return true;
     }
+    for (const w of items('warp')) {
+      if (b.lastWarp === w || !near(w, 7)) continue;
+      const to = items('warp').find(o => o !== w && o.pid === w.pid); if (!to) continue;
+      const c = ctr(to); b.x = c.x; b.y = c.y; b.lastWarp = to; b.mir = null; b.tr.length = 0; w.flash = to.flash = .2;
+      b.refl = (b.refl || 0) + 1; if (b.refl <= 8) b.life = Math.max(b.life, 1.3);
+      G.sfx('glow'); G.burst(c.x, c.y, 8, WARP_COL[to.pid] || '#c49bff', 60, 0); break;
+    }
+    for (const re of items('redeye')) {
+      if (!near(re, 6 + b.r)) continue;
+      const c = ctr(re); re.flash = .4; G.burst(c.x, c.y, 14, '#ff3050', 90, 0); G.ring(c.x, c.y, '#ff3050', 16); G.shake(3);
+      if (!solved()) dim('A RED EYE WOKE');
+      return true;
+    }
     for (const m of items('mirror')) {
       const c = ctr(m);
       if (b.mir === m || Math.abs(b.x - c.x) > 7 || Math.abs(b.y - c.y) > 7) continue;
@@ -4414,6 +4489,7 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
     for (const t of items('target')) {
       if (t.lit) continue;
       const c = ctr(t); if (Math.abs(b.x - c.x) > 6 + b.r || Math.abs(b.y - c.y) > 6 + b.r) continue;
+      if (!isOpen(t)) { G.sfx('hit'); G.floatText(c.x, c.y - 10, 'CLOSED', '#8a7aa8'); G.burst(b.x, b.y, 4, '#8a7aa8', 40, 1); return true; }
       if (t.heavy && !b.lance) { G.sfx('hit'); G.floatText(c.x, c.y - 10, 'LANCE ONLY', '#b0c0ff'); G.burst(b.x, b.y, 5, '#b0c0ff', 50, 1); return true; }
       light(t); if (!b.lance) return true;
     }
@@ -4436,7 +4512,7 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
       m.flash = Math.max(0, (m.flash || 0) - dt);
       if (m.spin) { m.spinT = (m.spinT || 0) + dt; if (m.spinT >= m.spin) { m.spinT = 0; m.dir = m.dir === '/' ? '\\' : '/'; m.flash = .12; } }
     }
-    for (const it of items('switch').concat(items('prism'))) it.flash = Math.max(0, (it.flash || 0) - dt);
+    for (const it of items('switch').concat(items('prism'), items('warp'), items('redeye'))) it.flash = Math.max(0, (it.flash || 0) - dt);
     this.swCD = Math.max(0, this.swCD - dt);
     // a paired eye goes dark again if its partner does not wake within half a second
     if (!solved()) for (const t of items('target')) {
@@ -4496,13 +4572,25 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
         LF.drawText(g, done ? 'GALLERY SOLVED' : 'GALLERY', Math.round(it.cx - cam.x), Math.round(it.by - cam.y - 40), done ? '#7dffb0' : '#ffb23a', 'center');
         continue;
       }
-      if (it.type !== 'target' && it.type !== 'mirror' && it.type !== 'switch' && it.type !== 'prism') continue;
+      if (it.type !== 'target' && it.type !== 'mirror' && it.type !== 'switch' && it.type !== 'prism' && it.type !== 'warp' && it.type !== 'redeye') continue;
       const c = ctr(it), x = Math.round(c.x - cam.x), y = Math.round(c.y - cam.y);
       if (x < -20 || x > W + 20 || y < -20 || y > LF.H + 20) continue;
       if (it.type === 'switch') {
         const col = this.pzPhase ? '#c49bff' : '#7ad8ff', fl = it.flash > 0;
         for (let i = 0; i < 6; i++) { R(g, fl ? '#ffffff' : col, x - i, y - 6 + i, i * 2 + 1, 1); R(g, fl ? '#ffffff' : col, x - i, y + 6 - i, i * 2 + 1, 1); }
         R(g, '#ffffff', x - 1, y - 3, 2, 2); lights.push({ x: c.x, y: c.y, r: 26, c: col, a: .9 });
+        continue;
+      }
+      if (it.type === 'warp') {
+        const col = WARP_COL[it.pid] || '#c49bff';
+        for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283 + this.clock * 3 * (it.pid === 'b' ? -1 : 1); g.globalAlpha = .55 + .45 * Math.sin(a * 2 + this.clock * 5); R(g, i % 3 ? col : '#ffffff', x + Math.cos(a) * 6 - 1, y + Math.sin(a) * 7 - 1, 2, 2); }
+        g.globalAlpha = 1; LF.drawText(g, it.pid.toUpperCase(), x, y + 3, col, 'center'); lights.push({ x: c.x, y: c.y, r: 22, c: col, a: it.flash > 0 ? 1 : .6 });
+        continue;
+      }
+      if (it.type === 'redeye') {
+        const fl = it.flash > 0;
+        R(g, '#05030f', x - 6, y - 7, 12, 14); R(g, '#05030f', x - 7, y - 6, 14, 12); R(g, '#6a1020', x - 6, y - 6, 12, 12); R(g, fl ? '#ffffff' : '#ff3050', x - 4, y - 2, 8, 4); R(g, '#05030f', x - 1, y - 2, 2, 4);
+        lights.push({ x: c.x, y: c.y, r: 20, c: '#ff3050', a: fl ? 1 : .55 });
         continue;
       }
       if (it.type === 'prism') {
@@ -4514,11 +4602,15 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
       }
       if (it.type === 'target') {
         if (it.drift) { g.globalAlpha = .25; R(g, '#8a7aa8', x, Math.round(it.by - 8 - it.drift * T - cam.y), 1, Math.round(it.drift * T * 2)); g.globalAlpha = 1; }
-        const rim = it.heavy ? '#8a9ab8' : it.pair ? '#2f8f4c' : '#4a4060';
+        const rim = it.heavy ? '#8a9ab8' : it.pair ? '#2f8f4c' : it.fire ? '#8a6a20' : '#4a4060';
         R(g, '#05030f', x - 6, y - 7, 12, 14); R(g, '#05030f', x - 7, y - 6, 14, 12); R(g, rim, x - 6, y - 6, 12, 12); R(g, '#1a1228', x - 4, y - 4, 8, 8);
         if (it.heavy) { R(g, '#c8d8f0', x - 6, y - 6, 2, 2); R(g, '#c8d8f0', x + 4, y - 6, 2, 2); R(g, '#c8d8f0', x - 6, y + 4, 2, 2); R(g, '#c8d8f0', x + 4, y + 4, 2, 2); }
         if (it.lit) { R(g, '#ff8a3d', x - 4, y - 4, 8, 8); R(g, '#ffd27a', x - 3, y - 3, 6, 6); R(g, '#fff2c9', x - 1, y - 1, 2, 2); lights.push({ x: c.x, y: c.y, r: 34, c: '#ffb860', a: 1 }); }
         else { g.globalAlpha = .35 + .25 * Math.sin(t * 3 + (it.ph || 0)); R(g, '#ffb23a', x - 1, y - 1, 2, 2); g.globalAlpha = 1; lights.push({ x: c.x, y: c.y, r: 12, c: '#8a6a50', a: .4 }); }
+        if (it.blink && !it.lit) { // shutters slide over a sleeping eye
+          const op = isOpen(it), k = op ? 0 : 1; R(g, '#2a2040', x - 6, y - 6, 12, Math.round(6 * k)); R(g, '#2a2040', x - 6, y + 6 - Math.round(6 * k), 12, Math.round(6 * k)); if (!op) R(g, '#4a4060', x - 6, y - 1, 12, 1);
+        }
+        if (it.fire) { const d = DIRS[it.fire], ax = x + d[0] * 9, ay = y + d[1] * 9; R(g, it.lit ? '#ffd27a' : '#c8a050', ax - 1, ay - 1, 3, 3); R(g, it.lit ? '#ffd27a' : '#c8a050', ax + d[0] * 2, ay + d[1] * 2, 1, 1); }
         if (it.ord) LF.drawText(g, String(it.ord), x, y - 9, it.lit ? '#7dffb0' : it.ord === nextOrd() ? '#ffd27a' : '#8a7aa8', 'center');
       } else {
         const fl = it.flash > 0;
@@ -4548,7 +4640,7 @@ body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
   };
   const helpO = UI.helpHTML;
   UI.helpHTML = function () {
-    const h = helpO.apply(this, arguments), tip = '<div class="entry"><b>Lamplight Galleries:</b> once you have the Ember Shot, glowing GALLERY doorways appear in eight rooms. Shoot every ember eye to open the gate. Mirrors bend shots; strike a pivot mirror to turn it, and time your shot on a spinning one. Iron-ringed eyes need a Lance, grates let shots through, numbered eyes wake in order, green-ringed eyes wake in pairs (use a prism), switch crystals swap blue and violet stone, and some rooms are timed.</div>';
+    const h = helpO.apply(this, arguments), tip = '<div class="entry"><b>Lamplight Galleries:</b> once you have the Ember Shot, glowing GALLERY doorways appear in twelve rooms. Shoot every ember eye to open the gate. Mirrors bend shots; strike a pivot mirror to turn it, and time your shot on a spinning one. Iron-ringed eyes need a Lance, grates let shots through, numbered eyes wake in order, green-ringed eyes wake in pairs (use a prism), switch crystals swap blue and violet stone, blinking eyes only wake while open, relay eyes fire onward, warp rings carry shots to their twin, red eyes must never be hit, and some rooms are timed.</div>';
     const i = h.lastIndexOf('</div></div>');
     return i < 0 ? h : h.slice(0, i) + tip + h.slice(i);
   };
