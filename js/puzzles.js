@@ -77,12 +77,13 @@
     return r;
   });
   // F: a switch crystal trades blue (X) and violet (Y) stone. One eye needs the blue slot open, one the violet wall open, one a violet ledge to stand on.
+  //    A second crystal inside the eye chamber means you can never be shut in there.
   gallery('gal_switch', 'g_altar', 19, 10, () => {
     const r = Room('gal_switch', 'Switchback', 'glim', 32, 14, 5, 7, 2, 1, 'glimmer').f(12); r.floorRow = 12;
     r.pz = { timer: 0 }; r.ambience = { drip: .4, drone: .25 };
     r.b(20, 1, 1, 11).s(20, 3, 'X').b(20, 6, 1, 5, 'Y').b(21, 4, 5, 1).b(26, 1, 1, 11, 'E');
     r.b(1, 6, 2, 1).b(4, 6, 3, 1, 'Y').p(9, 9, 2).p(14, 9, 3).p(14, 4, 3);
-    r.e('lore', 5, 11, { id: 'switch' }).e('switch', 17, 1).e('target', 24, 3).e('target', 24, 8).e('target', 1, 5).e('chest', 29, 11, { give: 'embers:120' });
+    r.e('lore', 5, 11, { id: 'switch' }).e('switch', 17, 1).e('switch', 22, 5).e('target', 24, 3).e('target', 24, 8).e('target', 1, 5).e('chest', 29, 11, { give: 'embers:120' });
     return r;
   });
   // G: prisms split one shot into two; each pair of eyes must wake within half a second of each other.
@@ -109,8 +110,9 @@
   const ctr = it => ({ x: it.cx, y: it.by - 8 + (it.oy || 0) });
   const solved = () => !!(G.room && G.save.flags['pz:' + G.room.id]);
   const nextOrd = () => 1 + items('target').filter(t => t.ord && t.lit).length;
-  // aim assist leans toward unlit eyes (only the next one, in a numbered room)
-  LF.aimExtra = () => (G.room && G.room.pz && !solved()) ? items('target').filter(t => !t.lit && (!t.ord || t.ord === nextOrd())).map(ctr) : [];
+  // aim assist leans toward unlit eyes (only the next one, in a numbered room). Drifting eyes are left out:
+  // assist would aim where they are now, undoing the lead a player gives a moving target.
+  LF.aimExtra = () => (G.room && G.room.pz && !solved()) ? items('target').filter(t => !t.lit && !t.drift && (!t.ord || t.ord === nextOrd())).map(ctr) : [];
 
   const loadO = G.loadRoom;
   G.loadRoom = function (id) {

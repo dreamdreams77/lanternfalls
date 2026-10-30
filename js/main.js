@@ -75,7 +75,7 @@
   window.addEventListener('error', e => fatal(e.error || e.message));
 
   /* ---------- boot ---------- */
-  LF.loadSettings(); resize(); LF.initTouch(); LF.UI.init();
+  LF.loadSettings(); resize(); LF.initTouch(); resize(); LF.UI.init(); // size again once touch is known, so AUTO turns a phone's first screen too
   const unlock = () => { LF.Audio.init(); };
   ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, unlock, { passive: true }));
   document.addEventListener('visibilitychange', () => { if (document.hidden && LF.state === 'play') LF.UI.menu('pause'); });

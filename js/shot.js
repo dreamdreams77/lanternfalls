@@ -168,6 +168,9 @@
     if (!In.isDown('shoot') && !this.chargeT) LF.touchAim = null;
     updateShots(dt);
   };
+  // leaving play (menus, dialog, doors, death) drops a held charge, so it never fires by itself on return
+  const setStateO = G.setState;
+  G.setState = function (st) { if (st !== 'play') { this.chargeT = 0; this.chReady = false; LF.touchAim = null; } return setStateO.apply(this, arguments); };
   const resetShots = function () { this.shots = []; this.chargeT = 0; this.chReady = false; this.ammo = this.save ? this.maxAmmo() : 3; this.ammoT = 0; };
   const loadO = G.loadRoom; G.loadRoom = function () { const r = loadO.apply(this, arguments); resetShots.call(this); return r; };
 
