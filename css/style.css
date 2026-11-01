@@ -136,3 +136,40 @@ body.touchui .panel{max-height:96%}
 body.touchui .entry,body.touchui .stat{font-size:calc(var(--u)*.95)}
 body.touchui .hint{font-size:calc(var(--u)*.85)}
 body.touchui #dialog .txt{font-size:calc(var(--u)*1.15)}
+
+/* ---- presentation polish ---- */
+html,body{overscroll-behavior:none;-webkit-touch-callout:none;position:fixed;inset:0;width:100%}
+#ui>div:first-child{z-index:1}
+#banner{z-index:3}
+#ui>div[style*="pointer-events:none"]{z-index:10}          /* the screen layer sits above banners, tips and toasts */
+#toast{z-index:30}
+body[data-state=paused] #banner,body[data-state=paused] #tip,body[data-state=shop] #banner,body[data-state=shop] #tip,
+body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending] #banner,body[data-state=ending] #tip,body[data-state=title] #banner,body[data-state=title] #tip{opacity:0;visibility:hidden}
+.panel{animation:panelin .22s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes panelin{from{opacity:0;transform:translateY(calc(var(--u)*.6)) scale(.97)}to{opacity:1;transform:none}}
+.btn{transition:background .12s,border-color .12s,transform .08s,box-shadow .12s}
+.btn.sel,.btn:hover{box-shadow:0 calc(var(--u)*.22) 0 #0b0a1a,0 0 calc(var(--u)*1.2) #ffb23a55}
+.card{transition:border-color .12s,background .12s,transform .1s}
+.card:hover,.card.sel{border-color:var(--amber);transform:translateY(-1px)}
+.pinfo{display:flex;flex-wrap:wrap;gap:.2em calc(var(--u)*1);justify-content:center;margin:0 0 calc(var(--u)*.7);font-size:calc(var(--u)*.78);color:var(--dim);letter-spacing:.08em}
+.pinfo b{color:var(--amber);text-transform:uppercase}
+.pinfo span+span:before{content:"\00b7";margin-right:calc(var(--u)*1);color:#5a4a9c}
+.tline{margin-top:calc(var(--u)*.9);max-width:calc(var(--u)*30);text-align:center;color:#8b7dc0;font-size:calc(var(--u)*.75);font-style:italic;letter-spacing:.04em;animation:fadein 2s .6s both}
+.rank{text-align:center;margin:0 0 calc(var(--u)*.8)}
+.rank b{display:block;color:#ffe2a0;font-size:calc(var(--u)*1.1);letter-spacing:.18em;text-transform:uppercase;text-shadow:0 0 calc(var(--u)*.8) #ff9a3c88}
+.rank span{color:var(--dim);font-size:calc(var(--u)*.75);letter-spacing:.1em}
+/* loading */
+#loading .flame{width:calc(var(--u)*1.6);height:calc(var(--u)*2.6);margin-bottom:calc(var(--u)*1.4);background:linear-gradient(#fff2c9,#ffc15a 45%,#ff8a3d);border-radius:50% 50% 45% 45%/70% 70% 30% 30%;box-shadow:0 0 calc(var(--u)*2) #ff8a3d,0 0 calc(var(--u)*5) #ff6a2a66;animation:flame 1.1s ease-in-out infinite alternate}
+@keyframes flame{from{transform:scaleY(.9) scaleX(1.05);filter:brightness(.9)}to{transform:scaleY(1.12) scaleX(.9);filter:brightness(1.15)}}
+@media (max-height:420px){.panel{padding:calc(var(--u)*.8) calc(var(--u)*1.2)}h2{margin-bottom:calc(var(--u)*.4)}}
+@supports(padding:env(safe-area-inset-left)){
+  .tleft{left:calc(var(--u)*.8 + env(safe-area-inset-left))}.tright{right:calc(var(--u)*.8 + env(safe-area-inset-right))}
+  .ttop{right:calc(var(--u)*.5 + env(safe-area-inset-right))}
+}
+/* panels scroll with a finger (the stage itself never does) */
+.panel,.panel *{touch-action:pan-y}
+.panel input[type=range]{touch-action:pan-x}
+.card.unk span{display:none}
+.card.unk{padding:calc(var(--u)*.3) calc(var(--u)*.5)}
+.card.unk b{font-size:calc(var(--u)*.7)}
+.card.unk .ic{width:calc(var(--u)*1.5);height:calc(var(--u)*1.5)}

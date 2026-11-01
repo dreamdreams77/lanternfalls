@@ -188,19 +188,6 @@
     if (this.save && this.save.hp <= 1 && this.state === 'play') { g.globalAlpha = .35 + .25 * Math.sin(t * 6); g.drawImage(vig, 0, 0); g.globalAlpha = 1; }
   };
 
-  /* ---------- HUD extras: flare gauge + chain counter ---------- */
-  const hudO = G.drawHUD;
-  G.drawHUD = function (g) {
-    hudO.call(this, g);
-    if (!this.save || this.state === 'dead') return;
-    const cost = this.flareCost ? this.flareCost() : 50, f = this.flare, ready = f >= cost, full = f >= 99.5, t = this.clock;
-    R(g, '#05030f', 7, 30, 44, 6); R(g, '#2a1f3a', 8, 31, 42, 4);
-    R(g, full ? '#fff2c9' : ready ? (Math.sin(t * 10) > 0 ? '#ffd27a' : '#ffb23a') : '#b0642a', 8, 31, Math.round(42 * f / 100), 4);
-    R(g, '#05030f', 8 + Math.round(42 * cost / 100), 30, 1, 6);
-    if (ready) LF.drawText(g, LF.input.lastDevice === 'touch' ? 'FLARE' : 'FLARE [V]', 54, 36, '#ffd27a');
-    if (this.chain >= 2) { LF.drawText(g, 'x' + this.chain + ' CHAIN', W - 8, 26, this.chain >= 5 ? '#ff9a3c' : '#ffd27a', 'right'); R(g, '#05030f', W - 40, 29, 32, 3); R(g, '#ffd27a', W - 39, 30, Math.round(30 * this.chainT / 3.2), 1); }
-  };
-
   /* ---------- per-frame update: ambient particles + player's rising embers ---------- */
   let emberT = 0;
   const updO = G.update;
@@ -233,11 +220,16 @@
     }
     updO.call(this, dt);
   };
-  let last = 0, ema = 16.7, frames = 0, level = 0;
+  let last = 0, ema = 16.7, frames = 0, level = 0, recovered = 0;
   const rO = G.render;
   G.render = function (g) {
     const now = performance.now(), d = now - last; last = now;
-    if (d < 100) { ema += (d - ema) * .05; if (++frames > 150 && ema > 25 && level < 2) { level++; frames = 0; if (level === 1) FXV.bloom = false; else FXV.weather = false; } }
+    if (d < 100) {
+      ema += (d - ema) * .05; frames++;
+      const apply = () => { FXV.bloom = level < 1; FXV.weather = level < 2; };
+      if (frames > 150 && ema > 25 && level < 2) { level++; frames = 0; apply(); }
+      else if (frames > 900 && ema < 19 && level > 0 && recovered < 2) { level--; recovered++; frames = 0; apply(); } // a hiccup (tab switch, load) should not cost the effects for good
+    }
     const cam = this.cam, a = Math.min(1, Math.max(0, LF.alpha || 0)), saved = [], cx = cam.x, cy = cam.y;
     const lerp = o => {
       if (o._px === undefined) return; const x = o.x, y = o.y;
