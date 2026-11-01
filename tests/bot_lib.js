@@ -5,17 +5,20 @@ window.BOT = (function () {
   const LF = window.LF, G = LF.G, T = LF.T, In = LF.input, I = REACH.internals, pl = () => G.player;
   const nk = (x, y) => Math.round(x / 8) + ',' + Math.round(y / 8);
 
+  let avoid = []; // doors the planner must not wander into (anything but the target): in the live game they change room
+  const inDoor = p => avoid.some(r => p.x < r.x + r.w && p.x + I.PW > r.x && p.y < r.y + r.h && p.y + I.PH > r.y);
   function simRun(inp) { // run frames on the player alone; returns {ok, hit samples}
     const p = pl(), samples = []; let haz = false;
-    for (let i = 0; i < inp.length; i++) { for (const k of I.KEYS) In.set(k, !!inp[i][k]); p.update(G, 1 / 60); In.endFrame(); if (i % 2 === 0) samples.push([p.x, p.y]); if (p.y > G.room.h * T + 20 || G.__haz) { haz = true; break; } }
+    for (let i = 0; i < inp.length; i++) { for (const k of I.KEYS) In.set(k, !!inp[i][k]); p.update(G, 1 / 60); In.endFrame(); if (i % 2 === 0) samples.push([p.x, p.y]); if (p.y > G.room.h * T + 20 || G.__haz || inDoor(p)) { haz = true; break; } }
     for (const k of I.KEYS) In.set(k, false);
-    let st = 0; while (!haz && st < 150 && !(p.onGround && Math.abs(p.vx) < 1)) { p.update(G, 1 / 60); In.endFrame(); if (st % 2 === 0) samples.push([p.x, p.y]); st++; if (p.y > G.room.h * T + 20 || G.__haz) haz = true; }
+    let st = 0; while (!haz && st < 150 && !(p.onGround && Math.abs(p.vx) < 1)) { p.update(G, 1 / 60); In.endFrame(); if (st % 2 === 0) samples.push([p.x, p.y]); st++; if (p.y > G.room.h * T + 20 || G.__haz || inDoor(p)) haz = true; }
     return { ok: !haz && p.onGround, samples };
   }
   const touches = (samples, r) => samples.some(p => p[0] < r.x + r.w && p[0] + I.PW > r.x && p[1] < r.y + r.h && p[1] + I.PH > r.y);
 
   /* plan: BFS over macros from the exact current state to the first macro whose flight touches the target rect */
   function plan(rect, limit) {
+    avoid = Object.values(G.room.doors).map(d => ({ x: d.x * T, y: d.y * T, w: d.w * T, h: d.h * T })).filter(r => !(r.x === rect.x && r.y === rect.y));
     const p = pl(), start = I.snap(p), saved = { inp: Object.assign({}, In.down), mute: LF.settings.mute, spike: G.spikeHit, ts: G.ts, enemies: G.enemies, parts: G.particles, hp: G.save.hp };
     LF.settings.mute = true; G.__haz = false; G.spikeHit = () => { G.__haz = true; }; G.enemies = []; G.particles = []; G.ts = {};
     const ab = G.save.abil, water = G.room.grid.some(r => r.includes('w')), M = I.macros(ab, water), nodes = new Map(), parent = new Map(), q = [];
@@ -47,16 +50,19 @@ window.BOT = (function () {
   async function play(o) { // synchronous run: from room/door to the target door of that room
     stats.frames = stats.hpLost = stats.deaths = stats.kills = 0;
     G.loadRoom(o.room, o.from || null, o.spawn || null); G.state = 'play'; G.fade.a = 0; G.fade.to = 0; G.trans = false;
+    // what the game does when you walk up to them: sigil gates open for enough sigils, and a room's lever bars open once its lever is pulled
+    if (G.room.gateNeed && G.sigilCount() >= G.room.gateNeed) G.openAll('G');
+    if (LF.Rooms.list[o.room].ents.some(e => e.type === 'lever')) G.openAll('g');
     const room = G.room, d = room.doors[o.door], rect = { x: d.x * T, y: d.y * T, w: d.w * T, h: d.h * T };
     let fails = 0, steps = 0, idle = 0;
     while (stats.frames < (o.maxFrames || 3600)) {
-      if (G.room.id !== o.room) return { ok: true, frames: stats.frames, hpLost: stats.hpLost, deaths: stats.deaths, kills: stats.kills, steps };
+      if (G.room.id !== o.room) return { ok: G.room.doors && true, via: G.room.id, frames: stats.frames, hpLost: stats.hpLost, deaths: stats.deaths, kills: stats.kills, steps };
       if (G.state === 'dead') { stats.deaths++; G.save.hp = G.save.maxHp; G.respawn && 0; G.setState('play'); G.player.dead = false; G.save.hp = G.save.maxHp; G.loadRoom(o.room, o.from || null, o.spawn || null); G.fade.a = 0; G.fade.to = 0; continue; }
       if (G.state !== 'play') { G.update(1 / 60); In.endFrame(); stats.frames++; continue; }
       const p = pl();
       if (!(p.onGround && Math.abs(p.vx) < 25 && p.hurtT <= 0)) { frame({}); if (++idle > 240) { idle = 0; fails++; } continue; }
       const pn = plan(rect, o.limit); steps++;
-      if (!pn) { fails++; if (fails > 6) return { ok: false, why: 'no route', frames: stats.frames, hpLost: stats.hpLost, deaths: stats.deaths, kills: stats.kills, x: Math.round(p.x), y: Math.round(p.y), steps }; frame({ [fails % 2 ? 'left' : 'right']: 1, jump: fails % 3 === 0 ? 1 : 0 }); for (let i = 0; i < 20; i++) frame({ [fails % 2 ? 'left' : 'right']: 1 }); continue; }
+      if (!pn) { fails++; if (fails > 6) return { ok: false, why: 'no route', frames: stats.frames, hpLost: stats.hpLost, deaths: stats.deaths, kills: stats.kills, x: Math.round(p.x), y: Math.round(p.y), steps }; for (let i = 0; i < 30; i++) frame({}); continue; } // no honest route: wait (never wander out of a door) and report it
       const m = pn.M[pn.path[0]]; for (let i = 0; i < m.length && G.room.id === o.room && G.state === 'play'; i++) frame(m[i]);
       for (const k of I.KEYS) In.set(k, false);
     }

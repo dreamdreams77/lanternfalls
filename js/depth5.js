@@ -48,7 +48,7 @@
       let k = 0; for (const o of Gm.enemies) if (o !== e && o.type === 'bat' && o.state === 'hang' && Math.hypot(o.x - e.x, o.y - e.y) < 120) { o.state = 'swoop'; o.t = -.12 * (++k); }
       if (k) Gm.floatText(e.x + e.w / 2, e.y - 8, 'FLOCK!', '#ff8aa8');
     }
-    if (e.type === 'thorn' && Gm.projectiles.length > n && Math.hypot(Gm.player.cx - (e.x + e.w / 2), Gm.player.cy - (e.y + e.h / 2)) < 78) { // up close it fires a fan
+    if (e.type === 'thorn' && Gm.projectiles.length > n && Math.hypot(Gm.player.cx - (e.x + e.w / 2), Gm.player.cy - (e.y + e.h / 2)) < 56) { // right beside it, it fires a fan
       const p = Gm.projectiles[Gm.projectiles.length - 1], a = Math.atan2(p.vy, p.vx), sp = Math.hypot(p.vx, p.vy);
       for (const d of [-.42, .42]) Gm.projectiles.push(Object.assign({}, p, { vx: Math.cos(a + d) * sp, vy: Math.sin(a + d) * sp }));
     }
