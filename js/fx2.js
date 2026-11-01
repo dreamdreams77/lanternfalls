@@ -17,7 +17,7 @@
     sg.globalCompositeOperation = 'copy'; sg.globalAlpha = 1; sg.drawImage(room.layer, -Math.round(cam.x), -Math.round(cam.y));
     sg.globalCompositeOperation = 'destination-in'; sg.drawImage(mk, 0, 0);
     sg.globalCompositeOperation = 'source-atop'; sg.fillStyle = 'rgba(255,176,96,.28)'; sg.fillRect(0, 0, W, H);
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .55; g.drawImage(sc, 0, 0); g.restore();
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = room.area === 'snow' ? .16 : .55; g.drawImage(sc, 0, 0); g.restore();
   }
 
   /* ---------- chromatic fringe on heavy hits ---------- */

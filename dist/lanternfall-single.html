@@ -116,9 +116,9 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
   width:calc(var(--u)*3.6*var(--tb,1));height:calc(var(--u)*3.6*var(--tb,1));font-size:calc(var(--u)*.8*var(--tb,1));letter-spacing:.05em;opacity:.78;padding:0}
 .tbtn.big{width:calc(var(--u)*4.6*var(--tb,1));height:calc(var(--u)*4.6*var(--tb,1))}
 .tbtn.small{width:calc(var(--u)*3*var(--tb,1));height:calc(var(--u)*3*var(--tb,1));font-size:calc(var(--u)*.65*var(--tb,1))}
-.tbtn.tiny{width:calc(var(--u)*2.3*var(--tb,1));height:calc(var(--u)*2.3*var(--tb,1));font-size:calc(var(--u)*.6*var(--tb,1))}
+.tbtn.tiny{width:calc(var(--u)*3.1*var(--tb,1));height:calc(var(--u)*3.1*var(--tb,1));font-size:calc(var(--u)*.7*var(--tb,1))}
 .tbtn.on{background:#ffb23acc;color:#2a1000;opacity:1}
-.ttop{position:absolute;top:calc(var(--u)*.5);right:calc(var(--u)*.5);display:flex;gap:calc(var(--u)*.4);pointer-events:none}
+.ttop{position:absolute;top:calc(var(--u)*.5);right:calc(var(--u)*.5);display:flex;gap:calc(var(--u)*.45);pointer-events:none}
 @media (max-width:700px){.logo{letter-spacing:.06em}}
 
 /* interactive layers inside the UI container */
@@ -181,8 +181,8 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
   .ttop{right:calc(var(--u)*.5 + env(safe-area-inset-right))}
 }
 /* panels scroll with a finger (the stage itself never does) */
-.panel,.panel *{touch-action:pan-y}
-.panel input[type=range]{touch-action:pan-x}
+.panel,.panel *{touch-action:pan-x pan-y}  /* both axes: a sideways stage scrolls along the screen long axis */
+.panel input[type=range]{touch-action:none}
 .card.unk span{display:none}
 .card.unk{padding:calc(var(--u)*.3) calc(var(--u)*.5)}
 .card.unk b{font-size:calc(var(--u)*.7)}
@@ -1526,6 +1526,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
       const axis = S.hurtT > 0 ? 0 : In.axis;
       // ----- water -----
       const wasW = S.inWater; S.inWater = Phys.anyTile(G, S.x + 2, S.y + 6, S.w - 4, S.h - 8, c => c === 'w');
+      if (S.inWater) { S.airJumps = 1; S.dashed = false; } // water counts as a place to push off: taps made near the surface no longer burn the double jump
       if (S.inWater !== wasW) { G.sfx('splash'); G.burst(S.cx, S.y + S.h, 10, '#9af0d8', 60, 1); if (S.inWater) S.vy *= .35; }
       // ----- dash -----
       if (S.hurtT <= 0 && ab.dash && In.hit('dash') && S.dashCD <= 0 && !S.dashed && S.dashT <= 0) {
@@ -1546,8 +1547,8 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
           if (In.isDown('down') && S.onGround && Phys.anyTile(G, S.x, S.y + S.h + 1, S.w, 1, c => c === '=' || c === 'c')) { S.dropT = .2; S.y += 2; S.coyote = 0; }
           else S.jumpBuf = .13;
         }
-        if (S.jumpBuf > 0) {
-          if (S.coyote > 0 || (S.inWater && S.vy > -50)) { S.vy = S.inWater ? -210 : -340; S.coyote = 0; S.jumpBuf = 0; S.onGround = false; G.sfx('jump'); G.burst(S.cx, S.y + S.h, 4, '#c9b8e8', 40, 1); S.jumping = true; }
+        if (S.jumpBuf > 0) { // out of the water, a stroke from the surface throws you clear (-285) instead of a weak -210
+          if (S.coyote > 0 || (S.inWater && S.vy > -50)) { S.vy = S.inWater ? (Phys.anyTile(G, S.x + 2, S.y - 1, S.w - 4, 3, c => c === 'w') ? -210 : -285) : -340; S.coyote = 0; S.jumpBuf = 0; S.onGround = false; G.sfx('jump'); G.burst(S.cx, S.y + S.h, 4, '#c9b8e8', 40, 1); S.jumping = true; }
           else if (ab.dbl && S.airJumps > 0 && !S.onGround) { S.vy = -300; S.airJumps--; S.jumpBuf = 0; S.wingT = .35; G.sfx('djump'); G.burst(S.cx, S.cy, 10, '#c49bff', 70, 1); S.jumping = true; }
         }
         if (In.released.jump && S.vy < -110 && S.jumping) { S.vy = -110; S.jumping = false; }
@@ -2228,7 +2229,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
       if (e.kind === 'boss') LF.Bosses.update(e, dt, this);
       else { if (Math.abs(e.x - pl.x) > 480) continue; LF.updateEnemy(e, dt, this); if (e.y > this.room.h * T + 60) { this.enemies.splice(this.enemies.indexOf(e), 1); continue; } }
       if (e.dead || (e.kind === 'boss' && !e.active)) continue;
-      if (pl.invul <= 0 && !pl.dead && pl.dashT <= 0) {
+      if (pl.invul <= 0 && !pl.dead && pl.dashT <= 0 && !(e.spawnT > 0)) {
         const r = e.kind === 'boss' ? { x: e.x + 5, y: e.y + 4, w: e.w - 10, h: e.h - 6 } : e;
         if (LF.overlap(r, pl)) pl.hurt(this, (e.d && e.d.contact) || 1, e.x + e.w / 2);
       }
@@ -2483,11 +2484,11 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     lg.globalCompositeOperation = 'source-over'; lg.globalAlpha = 1;
     g.drawImage(lightCv, 0, 0);
     // warm additive glows
-    g.globalCompositeOperation = 'lighter';
-    if (!pl.dead) { g.globalAlpha = .22; const r = this.lightR * flick; g.drawImage(glowSprite('#ffb860'), pl.cx - cam.x - r, pl.cy - cam.y - r - 2, r * 2, r * 2); }
+    g.globalCompositeOperation = 'lighter'; const gk = room.area === 'snow' ? .3 : 1; // additive glow washes snow out, so it is held back there
+    if (!pl.dead) { g.globalAlpha = .22 * gk; const r = this.lightR * flick; g.drawImage(glowSprite('#ffb860'), pl.cx - cam.x - r, pl.cy - cam.y - r - 2, r * 2, r * 2); }
     for (const l of lights) {
       const sx = l.x - cam.x, sy = l.y - cam.y; if (sx < -l.r || sx > W + l.r || sy < -l.r || sy > H + l.r) continue;
-      g.globalAlpha = Math.min(.35, (l.a || 1) * .3); g.drawImage(glowSprite(l.c.length === 7 ? l.c : '#ffb860'), sx - l.r * .7, sy - l.r * .7, l.r * 1.4, l.r * 1.4);
+      g.globalAlpha = Math.min(.35, (l.a || 1) * .3) * gk; g.drawImage(glowSprite(l.c.length === 7 ? l.c : '#ffb860'), sx - l.r * .7, sy - l.r * .7, l.r * 1.4, l.r * 1.4);
     }
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     // vignette
@@ -2533,6 +2534,130 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     const v = g.createRadialGradient(W / 2, H / 2, H * .4, W / 2, H / 2, W * .65); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)'); g.fillStyle = v; g.fillRect(0, 0, W, H);
     if (this.fade.a > 0) { g.globalAlpha = Math.min(1, this.fade.a); g.fillStyle = '#05030f'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   };
+})();
+
+</script>
+<script>
+/* Lanternfall - room moods: each room gets its own backdrop (interiors, caves, thorns, crystals, arches, chains...) and colour grade,
+   drawn behind the world with parallax. Rooms without a mood keep their region backdrop. */
+(function () {
+  'use strict';
+  const LF = window.LF, W = LF.W, H = LF.H, Art = LF.Art, PAL = LF.PAL;
+  const R = (g, col, x, y, w, h) => { g.fillStyle = col; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
+  const wrap = (v, span) => ((v % span) + span) % span;
+  const hash = (i, k) => { let h = Math.imul(i * 374761393 + k * 668265263, 1274126177); h ^= h >>> 13; return ((h >>> 0) % 1000) / 1000; };
+
+  /* ---------- backdrop layers: (g, cam, t, P, opt) ---------- */
+  const LAYERS = {
+    rafters(g, cam, t, P, o) { // wooden posts, a crossbeam and hanging lanterns: the inside of a hollow stump
+      const span = 110, n = 5, col = o.col || '#1a100a', hi = o.hi || '#2c1a10';
+      for (let i = 0; i < n; i++) { const x = wrap(i * span - cam.x * .35, n * span) - span; R(g, col, x, 0, 12, H); R(g, hi, x + 2, 0, 2, H); R(g, '#0e0805', x + 10, 0, 2, H); }
+      R(g, col, 0, 20, W, 7); R(g, hi, 0, 20, W, 1); R(g, col, 0, 62, W, 4); R(g, hi, 0, 62, W, 1);
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const x = wrap(i * 96 + 40 - cam.x * .55, 4 * 96) - 30, y = 34 + hash(i, 2) * 18, fl = .75 + .25 * Math.sin(t * 7 + i * 2);
+        R(g, '#1a100a', x + 1, 27, 1, y - 27); R(g, '#3a2418', x - 2, y, 6, 7); g.globalAlpha = .9 * fl; R(g, '#ffc15a', x - 1, y + 1, 4, 5); R(g, '#fff2c9', x, y + 2, 2, 3);
+        g.globalAlpha = .26 * fl; for (let r = 18; r > 4; r -= 5) { g.beginPath(); g.fillStyle = '#ffb860'; g.arc(x + 1, y + 4, r, 0, 6.283); g.fill(); }
+      }
+      g.restore(); g.globalAlpha = 1;
+    },
+    roots(g, cam, t, P, o) { // hanging roots with glow-worms
+      for (let i = 0; i < 16; i++) {
+        const x = wrap(i * 41 + hash(i, 1) * 30 - cam.x * .45, 16 * 41) - 20, len = 24 + hash(i, 3) * 70, col = hash(i, 5) > .5 ? '#1c120d' : '#2a1a12';
+        for (let y = 0; y < len; y++) R(g, col, x + Math.sin(y * .12 + i) * 3 + Math.sin(t * .8 + i) * (y / len) * 2, y, y < 6 ? 3 : 2, 1);
+      }
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 12; i++) { const x = wrap(i * 53 + 17 - cam.x * .6, 12 * 53) - 10, y = 20 + hash(i, 7) * 110, a = .35 + .65 * Math.max(0, Math.sin(t * 1.4 + i * 3)); g.globalAlpha = a * .9; R(g, '#b8ff9a', x, y, 1, 1); g.globalAlpha = a * .25; R(g, '#7affb0', x - 1, y - 1, 3, 3); }
+      g.restore(); g.globalAlpha = 1;
+    },
+    thorns(g, cam, t, P, o) { // barbed vines
+      for (let i = 0; i < 9; i++) {
+        const x0 = wrap(i * 80 + hash(i, 1) * 40 - cam.x * .4, 9 * 80) - 40, len = 40 + hash(i, 3) * 80; let px = x0;
+        for (let y = 0; y < len; y++) { px = x0 + Math.sin(y * .09 + i * 2) * 6 + Math.sin(t * .6 + i) * (y / len); R(g, '#240c18', px, y, 3, 1); if (y % 9 === 4) { const s = hash(i, y) > .5 ? 1 : -1; R(g, '#3a1226', px + s * 3, y - 1, 2, 1); R(g, '#c8386a', px + s * 5, y - 2, 1, 1); } }
+      }
+    },
+    crystals(g, cam, t, P, o) { // tall crystal clusters rising from the floor and hanging from the ceiling
+      const col = o.col || P.mid;
+      for (let i = 0; i < 8; i++) {
+        const x = wrap(i * 70 + hash(i, 1) * 30 - cam.x * .28, 8 * 70) - 30, h = 40 + hash(i, 2) * 60, w = 10 + hash(i, 4) * 10, up = i % 2 === 0, y0 = up ? H : 0;
+        g.fillStyle = col; g.beginPath(); if (up) { g.moveTo(x, y0); g.lineTo(x + w * .3, y0 - h); g.lineTo(x + w * .7, y0 - h * .85); g.lineTo(x + w, y0); } else { g.moveTo(x, y0); g.lineTo(x + w * .3, y0 + h); g.lineTo(x + w * .7, y0 + h * .8); g.lineTo(x + w, y0); } g.closePath(); g.fill();
+        g.globalAlpha = .35; g.fillStyle = o.edge || P.glow; g.beginPath(); if (up) { g.moveTo(x + w * .3, y0 - h); g.lineTo(x + w * .45, y0 - h); g.lineTo(x + w * .2, y0); g.lineTo(x, y0); } else { g.moveTo(x + w * .3, y0 + h); g.lineTo(x + w * .45, y0 + h); g.lineTo(x + w * .2, y0); g.lineTo(x, y0); } g.fill(); g.globalAlpha = 1;
+      }
+    },
+    arches(g, cam, t, P, o) { // stone arcade of the drowned chapel
+      const span = o.span || 90, n = 6, col = o.col || '#06161b', hi = o.hi || '#0e2a31', top = o.top == null ? 34 : o.top;
+      for (let i = 0; i < n; i++) {
+        const x = wrap(i * span - cam.x * .32, n * span) - span;
+        R(g, col, x, top + 14, 14, H); R(g, hi, x + 2, top + 14, 2, H);
+        for (let k = 0; k < 14; k++) { const w = Math.round(Math.sqrt(Math.max(0, 14 * 14 - (14 - k) * (14 - k)))); R(g, col, x + 7 - w + (span - 14) / 2 * 0, top + k, 14 + (14 - w) * 0, 1); }
+        R(g, col, x - 6, top + 8, span, 6); R(g, hi, x - 6, top + 8, span, 1);
+      }
+    },
+    halo(g, cam, t, P, o) { // a holy glow behind a shrine of power
+      g.save(); g.globalCompositeOperation = 'lighter'; const cx = W / 2 - (cam.x * .1) % 40 * 0, cy = 96;
+      const gr = g.createRadialGradient(cx, cy, 4, cx, cy, 130); gr.addColorStop(0, o.col || 'rgba(255,230,160,.5)'); gr.addColorStop(1, 'rgba(255,230,160,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      g.globalAlpha = .08 + .03 * Math.sin(t); g.fillStyle = '#fff2c9'; for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283 + t * .05; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a - .07) * 260, cy + Math.sin(a - .07) * 260); g.lineTo(cx + Math.cos(a + .07) * 260, cy + Math.sin(a + .07) * 260); g.fill(); }
+      g.restore(); g.globalAlpha = 1;
+    },
+    beams(g, cam, t, P, o) { // slanting coloured light
+      const cols = o.cols || ['#ff6f7d', '#ffd27a', '#7dffb0', '#7ad8ff', '#c49bff']; g.save(); g.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < cols.length; i++) { const x = wrap(i * 70 - cam.x * .22 + Math.sin(t * .3 + i) * 8, 5 * 70 + 80) - 50; g.globalAlpha = (o.a || .07) * (.7 + .3 * Math.sin(t * .8 + i)); g.fillStyle = cols[i]; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 18, 0); g.lineTo(x + 70, H); g.lineTo(x + 36, H); g.fill(); }
+      g.restore(); g.globalAlpha = 1;
+    },
+    chains(g, cam, t, P, o) { // hanging chains and slow-swinging censers
+      for (let i = 0; i < 9; i++) {
+        const x = wrap(i * 52 + 14 - cam.x * .38, 9 * 52) - 20, len = 50 + hash(i, 2) * 90, sw = Math.sin(t * .7 + i * 1.7) * 2;
+        for (let y = 0; y < len; y += 4) { const px = x + sw * (y / len); R(g, '#241014', px, y, 2, 3); R(g, '#4a2428', px, y, 1, 1); }
+        if (i % 3 === 0) { const px = x + sw; R(g, '#1c0c10', px - 4, len, 10, 8); R(g, '#ff9a3c', px - 2, len + 2, 6, 4); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .25; g.beginPath(); g.fillStyle = '#ff8a3d'; g.arc(px + 1, len + 4, 14, 0, 6.283); g.fill(); g.restore(); }
+      }
+    },
+    pillars(g, cam, t, P, o) { // broken columns of an old arena
+      for (let i = 0; i < 6; i++) { const x = wrap(i * 76 - cam.x * .3, 6 * 76) - 40, top = 30 + hash(i, 1) * 50, w = 16 + hash(i, 2) * 6; R(g, o.col || '#120d22', x, top, w, H); R(g, o.hi || '#241a44', x + 2, top, 2, H); R(g, o.col || '#120d22', x - 3, top - 4, w + 6, 5); R(g, o.hi || '#241a44', x - 3, top - 4, w + 6, 1); }
+    },
+    mist(g, cam, t, P, o) { // low rolling mist
+      g.save(); g.globalAlpha = .13; for (let i = 0; i < 6; i++) { const x = wrap(i * 70 - t * (5 + i) - cam.x * (.2 + i * .04), 6 * 70 + 120) - 100; R(g, o.col || '#c8e8e0', x, 112 + i * 8, 90 + i * 10, 10); } g.restore(); g.globalAlpha = 1;
+    },
+    petals(g, cam, t, P, o) { // drifting petals
+      g.save(); for (let i = 0; i < 22; i++) { const x = wrap(i * 29 - cam.x * .5 - t * (6 + hash(i, 1) * 8) + Math.sin(t + i) * 8, W + 20) - 10, y = wrap(i * 37 + t * (10 + hash(i, 2) * 14), H + 12) - 6; g.globalAlpha = .6; R(g, o.col || '#ff9ad0', x, y, 2, 1); R(g, o.col2 || '#ffd0e8', x + 1, y + 1, 1, 1); } g.restore(); g.globalAlpha = 1;
+    },
+    abyss(g, cam, t, P, o) { // a deep glow rising from below
+      const gr = g.createLinearGradient(0, H * .45, 0, H); gr.addColorStop(0, 'rgba(10,60,80,0)'); gr.addColorStop(1, o.col || 'rgba(40,150,170,.45)'); g.fillStyle = gr; g.fillRect(0, H * .45, W, H * .55);
+    }
+  };
+
+  /* ---------- the moods: cover repaints the sky, tint grades the whole backdrop ---------- */
+  const MOODS = {
+    stump:      { cover: ['#24150e', '#3c2314'], a: .96, tint: ['#ffb070', .18], layers: [['rafters']] },
+    burrow:     { cover: ['#0e0907', '#231610'], a: .97, tint: ['#8a5a3a', .14], layers: [['roots']] },
+    rootbridge: { tint: ['#5ab0a0', .14], layers: [['mist']] },
+    thicket:    { tint: ['#ff3a6a', .14], layers: [['thorns']] },
+    bower:      { tint: ['#b060ff', .2], layers: [['petals', { col: '#d09aff', col2: '#f0d8ff' }]] },
+    g_descent:  { tint: ['#3a5aff', .12], layers: [['crystals']] },
+    g_cavern:   { tint: ['#a040ff', .14], layers: [['crystals', { col: '#1e1450', edge: '#c49bff' }]] },
+    g_altar:    { tint: ['#ffe0a0', .2], layers: [['halo']] },
+    g_lake:     { tint: ['#40a0ff', .12], layers: [['mist', { col: '#9ad0ff' }], ['crystals', { col: '#101a4a', edge: '#7ad8ff' }]] },
+    g_prism:    { tint: ['#ffffff', .05], layers: [['beams', { a: .09 }], ['crystals', { col: '#15103e', edge: '#ffd27a' }]] },
+    d_entry:    { tint: ['#20a090', .1], layers: [['arches']] },
+    d_nave:     { cover: ['#031014', '#082a30'], a: .7, tint: ['#10b0b0', .1], layers: [['arches', { span: 120, top: 24 }]] },
+    d_glide:    { tint: ['#80c0ff', .12], layers: [['beams', { cols: ['#c0f0ff', '#9ad0ff'], a: .06 }]] },
+    d_chasm:    { cover: ['#020a12', '#06222e'], a: .8, tint: ['#0a6080', .14], layers: [['abyss']] },
+    d_tide:     { tint: ['#30d0c0', .12], layers: [['arches', { span: 100 }], ['beams', { cols: ['#9af0d8'], a: .07 }]] },
+    s_foot:     { tint: ['#ff6a30', .1], layers: [['chains']] },
+    s_climb:    { cover: ['#10060c', '#2a0e14'], a: .6, tint: ['#e04a30', .1], layers: [['chains']] },
+    s_summit:   { tint: ['#ffc060', .14], layers: [['beams', { cols: ['#ffd27a', '#ff9a3c'], a: .08 }], ['chains']] },
+    trial:      { cover: ['#0a0614', '#1a1030'], a: .8, tint: ['#8a50ff', .1], layers: [['pillars']] }
+  };
+
+  const bgO = Art.drawBG;
+  Art.drawBG = function (g, room, cam, t, tod) {
+    bgO.call(this, g, room, cam, t, tod);
+    const m = room && MOODS[room.id]; if (!m) return;
+    const P = PAL[room.area];
+    if (m.cover) { const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, m.cover[0]); gr.addColorStop(1, m.cover[1]); g.globalAlpha = m.a; g.fillStyle = gr; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+    for (const [name, o] of m.layers) LAYERS[name](g, cam, t, P, o || {});
+    if (m.tint) { g.save(); g.globalCompositeOperation = 'soft-light'; g.globalAlpha = m.tint[1] * 2; g.fillStyle = m.tint[0]; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; g.globalAlpha = m.tint[1] * .5; g.fillRect(0, 0, W, H); g.restore(); }
+  };
+  LF.MOODS = MOODS;
 })();
 
 </script>
@@ -2600,7 +2725,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
 
     /* ---- ability slots ---- */
     const ab = [['glide'], ['dash'], ['dbl']].map(a => a[0]).filter(k => s.abil[k]);
-    const tOff = document.body.classList.contains('touchui') ? 54 : 0; // keep clear of the on-screen MAP and pause buttons
+    const tb = { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1, tOff = document.body.classList.contains('touchui') ? Math.round(56 * tb + 10) : 0; // keep clear of the on-screen MAP and pause buttons
     let ax = W - 6 - tOff - ab.length * 12; if (ab.length) plate(g, ax - 2, 3, ab.length * 12 + 2, 13, .55);
     for (const k of ab) {
       const im = S.iconImg(k), cdn = k === 'dash' && pl.dashCD > 0 ? pl.dashCD / .5 : 0;
@@ -3425,7 +3550,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     sg.globalCompositeOperation = 'copy'; sg.globalAlpha = 1; sg.drawImage(room.layer, -Math.round(cam.x), -Math.round(cam.y));
     sg.globalCompositeOperation = 'destination-in'; sg.drawImage(mk, 0, 0);
     sg.globalCompositeOperation = 'source-atop'; sg.fillStyle = 'rgba(255,176,96,.28)'; sg.fillRect(0, 0, W, H);
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .55; g.drawImage(sc, 0, 0); g.restore();
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = room.area === 'snow' ? .16 : .55; g.drawImage(sc, 0, 0); g.restore();
   }
 
   /* ---------- chromatic fringe on heavy hits ---------- */
@@ -3732,7 +3857,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     shafts(g, cam, t, area, this.tod || 0);
     if (FXV.weather) drawP(g, t);
     grade(g, area);
-    bloom(g, .42);
+    bloom(g, area === 'snow' ? .16 : area === 'storm' ? .3 : .42);
     if (FXV.weather) fgSil(g, cam, t, area);
     if (this._prompt) { LF.drawText(g, this._prompt.label, this._prompt.x, this._prompt.y, '#ffd27a', 'center'); this._prompt = null; }
     // flare shockwave ring
@@ -4371,7 +4496,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     const r = hurtO.call(this, e, dmg, dir, Gm);
     if (!r) {
       e._hs = .14;
-      if (e.type === 'beetle' && e.affix !== 'shielded') { e._hc = (e._hc || 0) + 1; e._hct = 2; if (e._hc >= 3 && e.hp > 0) { e._hc = 0; e.curl = 1.5; e.stun = 0; Gm.floatText(e.x + e.w / 2, e.y - 10, 'CURLS UP', '#ffb0c0'); Gm.sfx('crack'); } }
+      if (e.type === 'beetle' && e.affix !== 'shielded') { e._hc = (e._hc || 0) + 1; e._hct = 2; if (e._hc >= 3 && e.hp > 0) { e._hc = 0; e.curl = 1.5; e.curlW = .35; e.stun = 0; Gm.floatText(e.x + e.w / 2, e.y - 10, 'CURLS UP', '#ffb0c0'); Gm.sfx('crack'); } }
     }
     return r;
   };
@@ -4379,17 +4504,27 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
   /* ---------- behaviours ---------- */
   const ueO = LF.updateEnemy;
   LF.updateEnemy = function (e, dt, Gm) {
+    if (e.spawnT > 0) { // spawning in: still and harmless for a beat, so a fresh foe never bites on arrival
+      e.spawnT -= dt; e.vx = 0; if (!e.d.fly) { e.vy = Math.min(e.vy + 900 * dt, 380); Phys.move(e, dt, Gm); } return;
+    }
     if (e._hs > 0) e._hs -= dt;
     if (e._hct > 0) { e._hct -= dt; if (e._hct <= 0) e._hc = 0; }
     if (e.type === 'beetle' && e.curl > 0) { // rolling ball: fast, spiked, untouchable
-      e.curl -= dt; e.flash = Math.max(0, e.flash - dt); e.vx = e.face * 118; e.vy = Math.min(e.vy + 900 * dt, 380); Phys.move(e, dt, Gm);
+      e.curl -= dt; e.flash = Math.max(0, e.flash - dt);
+      if (e.curlW > 0) { e.curlW -= dt; e.vx = 0; e.vy = Math.min(e.vy + 900 * dt, 380); Phys.move(e, dt, Gm); return; } // winds up before it rolls
+      e.vx = e.face * 118; e.vy = Math.min(e.vy + 900 * dt, 380); Phys.move(e, dt, Gm);
       if (e.hitX) e.face = -e.face;
       if (Math.random() < .5) Gm.particles.push({ x: e.x + e.w / 2, y: e.y + e.h - 1, vx: -e.face * 20, vy: -10, life: .3, max: .3, col: '#c9b8e8', sz: 1, g: 0 });
       if (e.curl <= 0) { e.state = 'idle'; e.t = -.7; }
       return;
     }
     const was = e.state, n = Gm.projectiles.length;
+    if (e.ambush && e.d.fly && e.type === 'bat' && e.state === 'hang') { e.state = 'swoop'; e.t = 0; } // an ambush bat is already awake
     ueO.call(this, e, dt, Gm);
+    if (e.ambush && e.d.fly) { // ambush fliers come for you instead of waiting to be found
+      const dx = Gm.player.cx - (e.x + e.w / 2), dy = Gm.player.cy - (e.y + e.h / 2), d = Math.hypot(dx, dy);
+      if (d > 70) { const sp = { wisp: 36, mothfoe: 40, bat: 55, jelly: 24 }[e.type] || 30; e.x += dx / d * sp * dt; e.y += dy / d * sp * dt; if (e.type === 'bat' && e.t > 1.2) e.t = 0; }
+    }
     if (e.type === 'bat' && was === 'hang' && e.state === 'swoop') { // one wakes, the colony wakes
       let k = 0; for (const o of Gm.enemies) if (o !== e && o.type === 'bat' && o.state === 'hang' && Math.hypot(o.x - e.x, o.y - e.y) < 120) { o.state = 'swoop'; o.t = -.12 * (++k); }
       if (k) Gm.floatText(e.x + e.w / 2, e.y - 8, 'FLOCK!', '#ff8aa8');
@@ -4410,7 +4545,7 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     ext().splits++;
     for (const d of [-1, 1]) {
       const b = this.spawnEnemy('slime', e.x + e.w / 2 - 4.5 + d * 3, e.y + e.h - 7);
-      b.baby = 1; b.w = 9; b.h = 7; b.hp = b.maxHp = 1; b.em = 1; b.d = Object.assign({}, b.d, { spd: b.d.spd * 1.6 }); b.vx = d * 85; b.vy = -150; b.face = d; b.ghost = 0; b.stun = .1;
+      b.baby = 1; b.w = 9; b.h = 7; b.hp = b.maxHp = 1; b.em = 1; b.d = Object.assign({}, b.d, { spd: b.d.spd * 1.6 }); b.vx = d * 85; b.vy = -150; b.face = d; b.ghost = 0; b.spawnT = .4;
     }
     this.burst(e.x + e.w / 2, e.y + e.h / 2, 8, '#7ad86a', 90, 1);
   };
@@ -4419,8 +4554,9 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
   const deO = S.drawEnemy;
   S.drawEnemy = function (g, e, cam, t) {
     const x = e.x - cam.x, y = e.y - cam.y;
+    if (e.spawnT > 0) { g.globalAlpha = .3 + .25 * Math.sin(t * 34); deO.call(this, g, e, cam, t); g.globalAlpha = 1; return; }
     if (e.type === 'beetle' && e.curl > 0) {
-      const cx = Math.round(x + e.w / 2), cy = Math.round(y + e.h / 2 - 1), a = t * 16 * e.face;
+      const cx = Math.round(x + e.w / 2 + (e.curlW > 0 ? Math.round(Math.sin(t * 90) * 1.2) : 0)), cy = Math.round(y + e.h / 2 - 1), a = e.curlW > 0 ? 0 : t * 16 * e.face;
       g.save(); g.translate(cx, cy); g.rotate(a);
       R(g, '#05030f', -7, -7, 14, 14); R(g, e.flash > 0 ? '#fff' : '#4a3ea0', -6, -6, 12, 12); R(g, '#2a2060', -4, -4, 8, 8); R(g, '#7ad8ff', -2, -6, 3, 2);
       for (const [px, py] of [[-9, -1], [7, -1], [-1, -9], [-1, 7], [-8, -8], [6, -8], [-8, 6], [6, 6]]) R(g, '#e8fbff', px, py, 3, 3);
@@ -4437,25 +4573,37 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
   let last = null, pend = 0, frame = 0, live = 0, tries = 0;
   const count = () => { const s = G.save; let n = s.moths.length; for (const k in s.flags) if (k.charCodeAt(0) === 102 && k.indexOf('frag:') === 0) n++; for (const k in s.seen) if (k.charCodeAt(0) === 99 && k.indexOf('c:') === 0) n++; return n; };
   const hash = k => { let h = 2166136261; for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
-  const calm = () => { const r = G.room; return r && !G.boss && r.id !== 'trial' && !r.bonus && !r.pz && !r.arcade && G.state === 'play'; };
-  const DEF = { moss: ['slime', 'beetle'], glim: ['bat', 'mothfoe'], drown: ['jelly', 'wisp'], spire: ['husk', 'wisp'] };
-  function spawnAmbush() {
-    const r = G.room, pl = G.player, s = G.save, def = LF.Rooms.list[r.id];
-    let types = [...new Set(def.ents.filter(e => LF.ENEMY_TYPES[e.type] && e.type !== 'snowman').map(e => e.type))];
-    if (!types.length) types = DEF[r.area] || ['slime'];
-    const n = 3 + (s.ng ? 1 : 0) + (s.maxHp >= 8 ? 1 : 0); let made = 0;
-    for (let i = 0; i < n * 8 && made < n; i++) {
-      const type = types[made % types.length], d = LF.ENEMY_TYPES[type], side = (made + i) % 2 ? 1 : -1, px = pl.cx + side * (80 + Math.random() * 90) - d.w / 2;
+  const calm = () => { const r = G.room; return r && !G.boss && r.id !== 'trial' && !r.bonus && !r.pz && !r.arcade && G.state === 'play' && !LF.Rooms.list[r.id].ents.some(e => e.type === 'thorn'); }; // rooms already guarded by shooters are hard enough
+  const DEF = { moss: ['slime', 'bat'], glim: ['bat', 'mothfoe'], drown: ['wisp', 'jelly'], spire: ['wisp', 'bat'] };
+  /* A fair ambush: two lighter foes first, then the rest once the first wave thins. At most one heavy (4+ health) foe, never a static shooter. */
+  function pickWaves(def, area, n) {
+    const ET = LF.ENEMY_TYPES; let types = [...new Set(def.ents.filter(e => ET[e.type] && e.type !== 'snowman' && e.type !== 'thorn').map(e => e.type))];
+    if (!types.length) types = DEF[area] || ['slime'];
+    const weak = types.filter(t => ET[t].hp <= 3), heavy = types.filter(t => ET[t].hp >= 4), w = weak.length ? weak : types;
+    const first = [w[0], w[1 % w.length]], rest = [];
+    for (let i = 0; i < n - 2; i++) rest.push(i === 0 && heavy.length ? heavy[0] : w[(i + 1) % w.length]);
+    return [first, rest];
+  }
+  function spawnGroup(list, side0) {
+    const r = G.room, pl = G.player; let made = 0;
+    for (let i = 0; i < list.length * 10 && made < list.length; i++) {
+      const type = list[made], d = LF.ENEMY_TYPES[type], side = (made + i + side0) % 2 ? 1 : -1, px = pl.cx + side * (110 + Math.random() * 80) - d.w / 2;
       if (px < 16 || px > r.w * T - 16 - d.w) continue;
       let py;
       if (d.fly) py = Math.max(24, Math.min(r.h * T - 40, pl.cy - 10 - Math.random() * 30));
       else { const tx = Math.floor((px + d.w / 2) / T); let ty = Math.floor(pl.cy / T) - 1, found = -1; for (let k = 0; k < 12 && ty < r.h; k++, ty++) { if (Phys.solid(G.tile(tx, ty)) && !Phys.solid(G.tile(tx, ty - 1)) && G.tile(tx, ty - 1) !== 'w') { found = ty; break; } } if (found < 0) continue; py = found * T - d.h; }
       if (Phys.solid(G.tile(Math.floor((px + d.w / 2) / T), Math.floor((py + d.h / 2) / T)))) continue;
-      const e = G.spawnEnemy(type, px, py); e.ambush = 1; e.em = Math.ceil(e.em * 1.3); made++;
+      const e = G.spawnEnemy(type, px, py); e.ambush = 1; e.spawnT = .9; e.em = Math.ceil(e.em * 1.3); made++;
       G.burst(e.x + e.w / 2, e.y + e.h / 2, 14, '#c49bff', 80, 1);
     }
+    return made;
+  }
+  let wave2 = null, waveT = 0;
+  function spawnAmbush() {
+    const r = G.room, s = G.save, def = LF.Rooms.list[r.id], n = 3 + (s.ng || s.maxHp >= 8 ? 1 : 0);
+    const [first, rest] = pickWaves(def, r.area, n), made = spawnGroup(first, 0);
     if (!made) return false;
-    live = made; G.banner('The dark answers', 'Something guarded this'); G.sfx('ambush'); G.shake(3); return true;
+    live = made; wave2 = rest; waveT = 0; G.banner('The dark answers', 'Something guarded this'); G.sfx('ambush'); G.shake(3); return true;
   }
   const simO = G.simulate;
   G.simulate = function (dt) {
@@ -4464,17 +4612,22 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     if (++frame % 12 === 0) {
       const n = count();
       if (last == null) last = n;
-      else if (n > last) { last = n; if (calm() && !live && !pend && hash(this.room.id + ':' + n + ':' + this.save.ng) < .42) pend = 1.2; tries = 0; }
+      else if (n > last) { last = n; if (calm() && !live && !pend && hash(this.room.id + ':' + n + ':' + this.save.ng) < .42) { pend = 1.2; tries = 0; } }
     }
     if (pend > 0) { pend -= dt; if (pend <= 0) { pend = 0; if (calm() && this.enemies.filter(e => !e.dead && e.kind !== 'boss').length < 7 && !spawnAmbush() && ++tries < 5) pend = .5; } } // no clear footing this time: look again shortly
-    if (live && !this.enemies.some(e => e.ambush && !e.dead)) {
+    if (live && wave2 && wave2.length) { // second wave: when the first thins out, or after a while
+      waveT += dt; const alive = this.enemies.filter(e => e.ambush && !e.dead).length;
+      if (alive <= 1 || waveT > 7) { const w = wave2; wave2 = null; const m = spawnGroup(w, 1); this.floatText(this.player.cx, this.player.y - 14, 'MORE!', '#c49bff', true); this.sfx('boss'); if (!m) wave2 = null; }
+    }
+    if (live && !wave2 && !this.enemies.some(e => e.ambush && !e.dead)) {
       live = 0; const s = ext(), pl = this.player; s.ambush++;
-      for (let k = 0; k < 10; k++) this.drops.push({ x: pl.cx, y: pl.cy - 6, w: 4, h: 4, vx: LF.rand(-80, 80), vy: LF.rand(-160, -70), v: 1, life: 28, ghost: 1 });
+      const purse = 8 + 3 * 4; for (let k = 0; k < purse; k++) this.drops.push({ x: pl.cx, y: pl.cy - 6, w: 4, h: 4, vx: LF.rand(-80, 80), vy: LF.rand(-160, -70), v: 1, life: 28, ghost: 1 });
       this.addFlare(30); this.floatText(pl.cx, pl.y - 12, 'AMBUSH CLEARED', '#ffd27a', true); this.sfx('clear'); this.burst(pl.cx, pl.cy, 18, '#ffd27a', 110, 1); this.checkBounties();
     }
   };
-  const loadO = G.loadRoom; G.loadRoom = function () { const r = loadO.apply(this, arguments); live = 0; pend = 0; return r; };
-  const startO = G.start; G.start = function () { last = null; live = 0; pend = 0; return startO.apply(this, arguments); };
+  const loadO = G.loadRoom; G.loadRoom = function () { const r = loadO.apply(this, arguments); live = 0; pend = 0; wave2 = null; return r; };
+  G.ambushReset = () => { last = null; live = 0; pend = 0; tries = 0; wave2 = null; }; // for tests that rewind the discovery counters
+  const startO = G.start; G.start = function () { last = null; live = 0; pend = 0; wave2 = null; return startO.apply(this, arguments); };
 
   /* ---------- bounty, stats, help ---------- */
   LF.BOUNTIES.push({ id: 'ambush', name: 'Unshaken', desc: 'Survive 5 ambushes set off by taking a treasure.', test: s => [(s.ext || {}).ambush || 0, 5], reward: 'embers:180', rtxt: '180 embers' });
@@ -4489,6 +4642,39 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
     const h = helpO.apply(this, arguments), tip = '<div class="entry"><b>Wise foes:</b> slimes split when they fall, bats wake as a flock, Thornlings fire a fan up close, and a beetle struck three times curls into a spiked ball. Wait it out. Some treasures are guarded: taking one can wake an ambush. Clear it for a purse of embers.</div>';
     const i = h.lastIndexOf('</div></div>');
     return i < 0 ? h : h.slice(0, i) + tip + h.slice(i);
+  };
+})();
+
+</script>
+<script>
+/* Lanternfall - play-quality guards found in playtesting: never arrive above a spike */
+(function () {
+  'use strict';
+  const LF = window.LF, G = LF.G, T = LF.T, Phys = LF.Phys;
+  const SAFE = '#=cDSFw', landing = (room, tx, y0) => { for (let ty = Math.max(0, y0); ty < room.h; ty++) { const c = room.grid[ty][tx]; if (c === '^') return '^'; if (c !== '.' && c !== 'v' && c !== 'j' && c !== 'L') return c; } return '.'; };
+
+  /* Arriving through a door above a spike (or any hazard) used to cost hearts in a loop: the post-hit teleport returned the player to
+     the same airborne arrival point. Slide the arrival sideways to the nearest column that lands on something safe. */
+  const loadO = G.loadRoom;
+  G.loadRoom = function (id, doorName, spawn) {
+    const r = loadO.apply(this, arguments), pl = this.player, room = this.room; if (!room || !pl) return r;
+    const row = Math.max(0, Math.floor((pl.y + pl.h) / T)), cols = x => { const a = []; for (let tx = Math.floor((x + 1) / T); tx <= Math.floor((x + pl.w - 2) / T); tx++) a.push(tx); return a; };
+    const bad = x => cols(x).some(tx => tx < 1 || tx >= room.w - 1 || landing(room, tx, row) === '^');
+    if (bad(pl.x)) {
+      for (let d = 4; d <= 16 * 8; d += 4) for (const s of [1, -1]) {
+        const x = pl.x + s * d; if (x < T || x > room.w * T - T - pl.w) continue;
+        if (!bad(x) && !Phys.anyTile(this, x, pl.y, pl.w, pl.h, c => Phys.solid(c))) { pl.x = x; pl.safe = { x: pl.x, y: pl.y }; this.camSnap(); return r; }
+      }
+    }
+    return r;
+  };
+
+  /* Floating combat text used to pile up when several callouts fired at once (FINISH, CLANK, CURLS UP...). Stack newcomers upward. */
+  const ftO = G.floatText;
+  G.floatText = function (x, y, s, col, big) {
+    let ny = y, guard = 0, hit = true;
+    while (hit && guard++ < 4) { hit = false; for (const t of this.texts) if (t.t < .45 && Math.abs(t.x - x) < 34 && Math.abs(t.y - ny) < 8) { ny -= 9; hit = true; break; } }
+    return ftO.call(this, x, ny, s, col, big);
   };
 })();
 

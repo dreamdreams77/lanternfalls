@@ -1,0 +1,185 @@
+{
+ "events": [
+  "reached stump via glade.l",
+  "reached rootbridge via glade.r",
+  "reached glade via stump.r",
+  "reached burrow via stump.l",
+  "reached glade via rootbridge.l",
+  "reached thicket via rootbridge.r",
+  "reached stump via burrow.r",
+  "reached trial via burrow.u",
+  "reached rootbridge via thicket.l",
+  "ABILITY dbl from thicket",
+  "reached bower via thicket.r",
+  "reached burrow via trial.l",
+  "reached thicket via bower.l",
+  "SIGIL thorn (boss room bower)",
+  "reached g_descent via thicket.g",
+  "reached thicket via g_descent.l",
+  "reached g_cavern via g_descent.r",
+  "reached g_descent via g_cavern.l",
+  "reached g_lake via g_cavern.r",
+  "reached g_altar via g_cavern.u",
+  "reached g_cavern via g_lake.l",
+  "reached g_cavern via g_altar.l",
+  "ABILITY dash from g_altar",
+  "reached g_prism via g_lake.r",
+  "reached g_lake via g_prism.l",
+  "reached d_entry via g_prism.r",
+  "SIGIL prism (boss room g_prism)",
+  "reached g_prism via d_entry.l",
+  "reached d_nave via d_entry.r",
+  "reached d_entry via d_nave.l",
+  "lever pulled in d_nave",
+  "reached d_glide via d_nave.r",
+  "reached d_nave via d_glide.l",
+  "reached d_chasm via d_glide.r",
+  "ABILITY glide from d_glide",
+  "reached d_glide via d_chasm.l",
+  "reached d_tide via d_chasm.r",
+  "reached d_chasm via d_tide.l",
+  "reached s_foot via d_tide.r",
+  "SIGIL tide (boss room d_tide)",
+  "reached d_tide via s_foot.l",
+  "reached s_climb via s_foot.r",
+  "reached s_foot via s_climb.l",
+  "reached s_summit via s_climb.u",
+  "reached s_climb via s_summit.l",
+  "seed not stable in s_climb at u"
+ ],
+ "abil": {
+  "dbl": true,
+  "dash": true,
+  "glide": true
+ },
+ "sigils": [
+  "thorn",
+  "prism",
+  "tide"
+ ],
+ "rooms": {
+  "glade": {
+   "nodes": 123,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "stump": {
+   "nodes": 74,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "burrow": {
+   "nodes": 65,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "rootbridge": {
+   "nodes": 118,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "thicket": {
+   "nodes": 153,
+   "doors": "3/3",
+   "missing": [],
+   "traps": 0
+  },
+  "bower": {
+   "nodes": 82,
+   "doors": "1/1",
+   "missing": [],
+   "traps": 0
+  },
+  "g_descent": {
+   "nodes": 153,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "g_cavern": {
+   "nodes": 132,
+   "doors": "3/3",
+   "missing": [],
+   "traps": 0
+  },
+  "g_altar": {
+   "nodes": 57,
+   "doors": "1/1",
+   "missing": [],
+   "traps": 0
+  },
+  "g_lake": {
+   "nodes": 102,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "g_prism": {
+   "nodes": 90,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "d_entry": {
+   "nodes": 104,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "d_nave": {
+   "nodes": 156,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "d_glide": {
+   "nodes": 76,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "d_chasm": {
+   "nodes": 54,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "d_tide": {
+   "nodes": 90,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "s_foot": {
+   "nodes": 68,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "s_climb": {
+   "nodes": 172,
+   "doors": "2/2",
+   "missing": [],
+   "traps": 0
+  },
+  "s_summit": {
+   "nodes": 92,
+   "doors": "1/1",
+   "missing": [],
+   "traps": 0
+  },
+  "trial": {
+   "nodes": 74,
+   "doors": "1/1",
+   "missing": [],
+   "traps": 0
+  }
+ },
+ "unreachableRooms": [],
+ "missingItems": [],
+ "traps": []
+}

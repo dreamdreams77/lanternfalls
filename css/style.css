@@ -102,9 +102,9 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*.9);height:calc(var(--u)
   width:calc(var(--u)*3.6*var(--tb,1));height:calc(var(--u)*3.6*var(--tb,1));font-size:calc(var(--u)*.8*var(--tb,1));letter-spacing:.05em;opacity:.78;padding:0}
 .tbtn.big{width:calc(var(--u)*4.6*var(--tb,1));height:calc(var(--u)*4.6*var(--tb,1))}
 .tbtn.small{width:calc(var(--u)*3*var(--tb,1));height:calc(var(--u)*3*var(--tb,1));font-size:calc(var(--u)*.65*var(--tb,1))}
-.tbtn.tiny{width:calc(var(--u)*2.3*var(--tb,1));height:calc(var(--u)*2.3*var(--tb,1));font-size:calc(var(--u)*.6*var(--tb,1))}
+.tbtn.tiny{width:calc(var(--u)*3.1*var(--tb,1));height:calc(var(--u)*3.1*var(--tb,1));font-size:calc(var(--u)*.7*var(--tb,1))}
 .tbtn.on{background:#ffb23acc;color:#2a1000;opacity:1}
-.ttop{position:absolute;top:calc(var(--u)*.5);right:calc(var(--u)*.5);display:flex;gap:calc(var(--u)*.4);pointer-events:none}
+.ttop{position:absolute;top:calc(var(--u)*.5);right:calc(var(--u)*.5);display:flex;gap:calc(var(--u)*.45);pointer-events:none}
 @media (max-width:700px){.logo{letter-spacing:.06em}}
 
 /* interactive layers inside the UI container */
@@ -167,8 +167,8 @@ body[data-state=dead] #banner,body[data-state=dead] #tip,body[data-state=ending]
   .ttop{right:calc(var(--u)*.5 + env(safe-area-inset-right))}
 }
 /* panels scroll with a finger (the stage itself never does) */
-.panel,.panel *{touch-action:pan-y}
-.panel input[type=range]{touch-action:pan-x}
+.panel,.panel *{touch-action:pan-x pan-y}  /* both axes: a sideways stage scrolls along the screen long axis */
+.panel input[type=range]{touch-action:none}
 .card.unk span{display:none}
 .card.unk{padding:calc(var(--u)*.3) calc(var(--u)*.5)}
 .card.unk b{font-size:calc(var(--u)*.7)}

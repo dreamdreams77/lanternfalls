@@ -18,7 +18,7 @@ with sync_playwright() as p:
       G.enemies=[]; const bats=[0,1,2].map(i=>{const e=LF.makeEnemy('bat',20+i,3,G,'k'+i); G.enemies.push(e); return e;}); G.player.x=bats[0].x+4; G.player.y=bats[0].y+60; step(40);
       out.flock=bats.filter(e=>e.state!=='hang').length;
       // ambush: discovering a treasure can set one off (force the roll)
-      G.enemies=[]; G.player.x=60; G.player.y=150; step(30);
+      G.enemies=[]; G.save.maxHp=G.save.hp=60; G.player.x=60; G.player.y=150; step(30);
       const hashOK=[...Array(60).keys()].some(i=>{ G.save.moths.push('t'+i); step(14); return false;}); step(100);
       out.ambushSeen=G.enemies.some(e=>e.ambush);
       return out}''')

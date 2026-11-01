@@ -61,7 +61,7 @@
 
     /* ---- ability slots ---- */
     const ab = [['glide'], ['dash'], ['dbl']].map(a => a[0]).filter(k => s.abil[k]);
-    const tOff = document.body.classList.contains('touchui') ? 54 : 0; // keep clear of the on-screen MAP and pause buttons
+    const tb = { s: .85, m: 1, l: 1.22 }[(LF.settings || {}).tsize] || 1, tOff = document.body.classList.contains('touchui') ? Math.round(56 * tb + 10) : 0; // keep clear of the on-screen MAP and pause buttons
     let ax = W - 6 - tOff - ab.length * 12; if (ab.length) plate(g, ax - 2, 3, ab.length * 12 + 2, 13, .55);
     for (const k of ab) {
       const im = S.iconImg(k), cdn = k === 'dash' && pl.dashCD > 0 ? pl.dashCD / .5 : 0;

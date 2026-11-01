@@ -74,6 +74,7 @@
       const axis = S.hurtT > 0 ? 0 : In.axis;
       // ----- water -----
       const wasW = S.inWater; S.inWater = Phys.anyTile(G, S.x + 2, S.y + 6, S.w - 4, S.h - 8, c => c === 'w');
+      if (S.inWater) { S.airJumps = 1; S.dashed = false; } // water counts as a place to push off: taps made near the surface no longer burn the double jump
       if (S.inWater !== wasW) { G.sfx('splash'); G.burst(S.cx, S.y + S.h, 10, '#9af0d8', 60, 1); if (S.inWater) S.vy *= .35; }
       // ----- dash -----
       if (S.hurtT <= 0 && ab.dash && In.hit('dash') && S.dashCD <= 0 && !S.dashed && S.dashT <= 0) {
@@ -94,8 +95,8 @@
           if (In.isDown('down') && S.onGround && Phys.anyTile(G, S.x, S.y + S.h + 1, S.w, 1, c => c === '=' || c === 'c')) { S.dropT = .2; S.y += 2; S.coyote = 0; }
           else S.jumpBuf = .13;
         }
-        if (S.jumpBuf > 0) {
-          if (S.coyote > 0 || (S.inWater && S.vy > -50)) { S.vy = S.inWater ? -210 : -340; S.coyote = 0; S.jumpBuf = 0; S.onGround = false; G.sfx('jump'); G.burst(S.cx, S.y + S.h, 4, '#c9b8e8', 40, 1); S.jumping = true; }
+        if (S.jumpBuf > 0) { // out of the water, a stroke from the surface throws you clear (-285) instead of a weak -210
+          if (S.coyote > 0 || (S.inWater && S.vy > -50)) { S.vy = S.inWater ? (Phys.anyTile(G, S.x + 2, S.y - 1, S.w - 4, 3, c => c === 'w') ? -210 : -285) : -340; S.coyote = 0; S.jumpBuf = 0; S.onGround = false; G.sfx('jump'); G.burst(S.cx, S.y + S.h, 4, '#c9b8e8', 40, 1); S.jumping = true; }
           else if (ab.dbl && S.airJumps > 0 && !S.onGround) { S.vy = -300; S.airJumps--; S.jumpBuf = 0; S.wingT = .35; G.sfx('djump'); G.burst(S.cx, S.cy, 10, '#c49bff', 70, 1); S.jumping = true; }
         }
         if (In.released.jump && S.vy < -110 && S.jumping) { S.vy = -110; S.jumping = false; }

@@ -97,7 +97,7 @@
       if (e.kind === 'boss') LF.Bosses.update(e, dt, this);
       else { if (Math.abs(e.x - pl.x) > 480) continue; LF.updateEnemy(e, dt, this); if (e.y > this.room.h * T + 60) { this.enemies.splice(this.enemies.indexOf(e), 1); continue; } }
       if (e.dead || (e.kind === 'boss' && !e.active)) continue;
-      if (pl.invul <= 0 && !pl.dead && pl.dashT <= 0) {
+      if (pl.invul <= 0 && !pl.dead && pl.dashT <= 0 && !(e.spawnT > 0)) {
         const r = e.kind === 'boss' ? { x: e.x + 5, y: e.y + 4, w: e.w - 10, h: e.h - 6 } : e;
         if (LF.overlap(r, pl)) pl.hurt(this, (e.d && e.d.contact) || 1, e.x + e.w / 2);
       }

@@ -173,7 +173,7 @@
     shafts(g, cam, t, area, this.tod || 0);
     if (FXV.weather) drawP(g, t);
     grade(g, area);
-    bloom(g, .42);
+    bloom(g, area === 'snow' ? .16 : area === 'storm' ? .3 : .42);
     if (FXV.weather) fgSil(g, cam, t, area);
     if (this._prompt) { LF.drawText(g, this._prompt.label, this._prompt.x, this._prompt.y, '#ffd27a', 'center'); this._prompt = null; }
     // flare shockwave ring

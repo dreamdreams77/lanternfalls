@@ -81,6 +81,7 @@ Gamepads (standard mapping) work as well; the B button fires Ember Shots. Touch 
 - **Presentation pass:** a redesigned HUD (framed hearts that shake and pop, a rolling ember counter with +N pops, a Flare lantern gauge, ability slots with dash cooldown, an ornate boss plate with a damage trail), a region map with names and a pulsing you-are-here marker, a framed pause screen, an iris wipe between rooms, boss letterbox bars, a death card and a rank on the victory screen.
 - **Living world:** the player squashes and stretches, grass and kelp bend as you pass, fireflies, spore lights and glow-fish shy away from you, and the title sky has a moon and shooting stars.
 - **Audio pass:** the music gains pulse, hat and shimmer layers as fights heat up, underwater and menus muffle the world, low health has a heartbeat, and ambushes, perfect parries and clears have their own stingers.
+- **Room moods:** every room has its own backdrop and grade: a lantern-hung wooden interior for the Stump, a dark root cave for the Burrow, thorn vines, crystal clusters, a drowned stone arcade, chains and censers in the Spire, pillars in the Trial. Snow no longer glares.
 - Layered parallax backgrounds, animated foliage, crystals, candles, vents and fog, god rays underwater, dynamic lantern lighting with a darkness layer, and a day/night cycle in the first region.
 - Chiptune music with a distinct track per region and boss/ending themes, procedural sound effects, and layered ambience (wind, drips, water, fire), all synthesized with the Web Audio API.
 - Title screen with Continue / New Game, settings (music, effects and ambience volumes, mute, screen shake, reduced flashes, touch controls), pause menu with Charms, Map, Journal, Stats and Help tabs, contextual tutorial tips, and confirmation prompts for destructive actions.
@@ -119,6 +120,8 @@ js/ui3.js             region map, pause header, title lines, victory rank
 js/fx4.js             squash and stretch, foliage, creatures, iris and letterbox, title sky
 js/depth5.js          foe behaviours, hit squash, guarded-discovery ambushes
 js/audio2.js          combat layers, muffling, heartbeat, stingers
+js/moods.js           room moods: per-room backdrops and grades
+js/qa.js              play-quality guards (safe door arrivals, stacked combat text)
 js/depth4.js          Frenzied elites, Needle Wick and Skyfire charms, more bounties
 js/shot.js            Ember Shot: aiming, aim assist, ammo, charged Lance, shot charms, upgrades and bounties
 js/puzzles.js         Lamplight Galleries: ember eyes (blinking, relay, red), mirrors, prisms, warp rings, switch blocks, grates, ember gates and the twelve puzzle rooms
@@ -147,6 +150,23 @@ python3 tests/arcade_test.py                 # Ember Shot unlock, Lance, boss da
 ```
 
 Both tests report any console or page errors. You can also play it by hand and open the browser console; the game object is exposed as `window.LF`.
+
+
+## Quality-assurance tools
+
+Beyond the unit-style tests, `tests/` has tools that play the game for real:
+
+```bash
+python3 tests/reach_test.py     # physics-driven reachability: uses the real player code to find every door, collectible, altar and lever a player can actually reach, in order of progression, and any dead-end trap
+python3 tests/skip_test.py      # sequence-break check: with every ability but no boss sigil, the sigil gates must still hold
+python3 tests/bot_test.py       # a bot plans routes with the real physics and plays the whole main route (Glade to Spire summit) with live enemies, reporting hearts lost per room
+python3 tests/ambush_test.py    # fairness of guarded discoveries: collects real treasures, fights what wakes, reports hearts lost (manual, about 8 minutes)
+python3 tests/perf_test.py 4    # frame times under a 4x slower CPU, and whether adaptive quality had to step in (manual)
+python3 tests/touch_test.py     # real multi-touch events at phone, tablet and portrait sizes: move, jump while moving, strike, Flare, menus, swipe scrolling, button size and overlap
+python3 tests/keyboard_test.py  # desktop controls through real key and mouse events
+python3 tests/save_test.py      # saves in the original format, a bare-minimum save, corrupt data and wrong versions
+python3 tests/arrival_test.py   # no door may drop you onto a spike
+```
 
 ## Publish on GitHub Pages
 

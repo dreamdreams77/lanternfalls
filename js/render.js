@@ -138,11 +138,11 @@
     lg.globalCompositeOperation = 'source-over'; lg.globalAlpha = 1;
     g.drawImage(lightCv, 0, 0);
     // warm additive glows
-    g.globalCompositeOperation = 'lighter';
-    if (!pl.dead) { g.globalAlpha = .22; const r = this.lightR * flick; g.drawImage(glowSprite('#ffb860'), pl.cx - cam.x - r, pl.cy - cam.y - r - 2, r * 2, r * 2); }
+    g.globalCompositeOperation = 'lighter'; const gk = room.area === 'snow' ? .3 : 1; // additive glow washes snow out, so it is held back there
+    if (!pl.dead) { g.globalAlpha = .22 * gk; const r = this.lightR * flick; g.drawImage(glowSprite('#ffb860'), pl.cx - cam.x - r, pl.cy - cam.y - r - 2, r * 2, r * 2); }
     for (const l of lights) {
       const sx = l.x - cam.x, sy = l.y - cam.y; if (sx < -l.r || sx > W + l.r || sy < -l.r || sy > H + l.r) continue;
-      g.globalAlpha = Math.min(.35, (l.a || 1) * .3); g.drawImage(glowSprite(l.c.length === 7 ? l.c : '#ffb860'), sx - l.r * .7, sy - l.r * .7, l.r * 1.4, l.r * 1.4);
+      g.globalAlpha = Math.min(.35, (l.a || 1) * .3) * gk; g.drawImage(glowSprite(l.c.length === 7 ? l.c : '#ffb860'), sx - l.r * .7, sy - l.r * .7, l.r * 1.4, l.r * 1.4);
     }
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     // vignette
